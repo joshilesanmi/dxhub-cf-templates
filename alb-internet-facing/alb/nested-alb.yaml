@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A template for the ALB
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Environment Name to name the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName:
+    Description: The Sercive Name
+    Type: String
+
+  Certificate:
+    Description: The Certificate for the listeners
+    Type: String
+    # Default: arn:aws:acm:eu-central-1:698195851833:certificate/d53d9a39-ca4d-4078-b548-d1503017374b
+
+  Path:
+    Type: String
+    Default: "*"
+    Description: A path on the public load balancer that this service
+                 should be connected to. Use * to send all load balancer
+                 traffic to this service.
+
+Resources:
+
+  # 1. Target Groups
+
+  ServiceTargetGroup1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /status
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      Name: !Sub ${EnvironmentName}-${ServiceName}-1
+      Port: 4000
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ServiceName}-1
+      TargetType: ip
+      UnhealthyThresholdCount: 2
+      VpcId: !ImportValue VpcId
+
+  ServiceTargetGroup2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 20
+      HealthCheckPath: /status
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      Name: !Sub ${EnvironmentName}-${ServiceName}-2
+      Port: 4000
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ServiceName}-2
+      TargetType: ip
+      UnhealthyThresholdCount: 2
+      VpcId: !ImportValue VpcId
+
+  # 1. Load Balancers
+
+  PublicLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}
+      Scheme: internet-facing
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
+      Subnets:
+        # The load balancer is placed into the public subnets, so that traffic
+        # from the internet can reach the load balancer directly via the internet gateway
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} PublicLoadBalancer
+
+  ServiceLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}-{ServiceName}
+      Scheme: internet-facing
+      SecurityGroups: [!ImportValue ServiceSecurityGroup]
+      Subnets:
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} {ServiceName} ServiceLoadBalancer
+
+# listeners
+
+  Service80Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: # Required
+        - Type: redirect
+          RedirectConfig:
+            Host: "#{host}"
+            Path: "/#{path}"
+            Port: "443"
+            Protocol: HTTPS
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      Port: 80
+      Protocol: HTTP
+
+  ServiceProdListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref Certificate
+      DefaultActions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup1
+          Type: forward
+      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      Port: 443
+      Protocol: HTTPS
+
+  ServiceTestListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref Certificate
+      DefaultActions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup2
+          Type: forward
+      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      Port: 8443
+      Protocol: HTTPS
+
+
+  # 5. Load Balancer Listener Rule
+
+  # Service listener rules
+
+  80ListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions: # Required
+        - Type: redirect
+          RedirectConfig:
+            Host: "#{host}"
+            Path: "/#{path}"
+            Port: "443"
+            Protocol: HTTPS
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      Conditions: # Required
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref Service80Listener # Required
+      Priority: 1 # Required
+
+  ServiceProdListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup1
+          Type: forward
+      Conditions: # Required
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref ServiceProdListener # Required
+      Priority: 1 # Required
+
+  ServiceTestListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup2
+          Type: forward
+      Conditions: # Required
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref ServiceTestListener # Required
+      Priority: 1 # Required
+
+
+Outputs:
+
+  ExternalUrl:
+    Description: The url of the external load balancer
+    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
+    Export:
+      Name: ExternalUrl
+
+  PublicLoadBalancerArn:
+    Description: The export arn for the Public LoadBalancer
+    Value: !Ref PublicLoadBalancer
+    Export:
+      Name: PublicLoadBalancerArn
+
+  ServiceLoadBalanceUrl:
+    Description: The url of the external load balancer
+    Value: !Join ['', ['http://', !GetAtt 'ServiceLoadBalancer.DNSName']]
+    Export:
+      Name: ServiceLoadBalanceUrl

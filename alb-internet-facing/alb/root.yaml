@@ -1,0 +1,26 @@
+# S3 URL for root - https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/alb/root.yaml
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName1:
+    Description: The Environment Name to name the resources
+    Type: String
+    Default: neocrm
+
+Resources:
+
+  nestedALB:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName5: !Ref ServiceName5
+      TemplateURL: https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/alb/nested-alb.yaml
+
