@@ -7,6 +7,10 @@ Parameters:
     Type: String
     Default: 'dxhub'
 
+  ServiceName:
+    Description: The Service name
+    Type: String
+
 Resources:
 
   nestedNetwork:
@@ -22,4 +26,5 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
+        ServiceName: !Ref ServiceName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/nested-security.yaml

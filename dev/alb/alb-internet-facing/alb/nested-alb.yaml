@@ -9,7 +9,7 @@ Parameters:
     Default: dxhub
 
   ServiceName:
-    Description: The Sercive Name
+    Description: The Service Name
     Type: String
 
   Certificate:
@@ -27,6 +27,24 @@ Parameters:
 Resources:
 
   # 1. Target Groups
+
+  DefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /healthcheck
+      # HealthCheckPort: "String"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: !Sub ${EnvironmentName}-DefaultTargetGroup
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-DefaultTargetGroup
+      UnhealthyThresholdCount: 2
+      VpcId: !ImportValue VpcId
 
   ServiceTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -77,9 +95,11 @@ Resources:
         # from the internet can reach the load balancer directly via the internet gateway
         - !ImportValue PublicSubnet1a
         - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName} PublicLoadBalancer
+
 
   ServiceLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -193,14 +213,38 @@ Outputs:
     Export:
       Name: ExternalUrl
 
-  PublicLoadBalancerArn:
-    Description: The export arn for the Public LoadBalancer
-    Value: !Ref PublicLoadBalancer
-    Export:
-      Name: PublicLoadBalancerArn
-
   ServiceLoadBalanceUrl:
     Description: The url of the external load balancer
     Value: !Join ['', ['http://', !GetAtt 'ServiceLoadBalancer.DNSName']]
     Export:
       Name: ServiceLoadBalanceUrl
+
+  PublicLoadBalancer:
+    Description: The export name for the Public LoadBalancer
+    Value: !Ref PublicLoadBalancer
+    Export:
+      Name: PublicLoadBalancer
+
+  ServiceTargetGroup1Name:
+    Description: The export name for ServiceTargetGroup1
+    Value: !GetAtt ServiceTargetGroup1.TargetGroupName
+    Export:
+      Name: ServiceTargetGroup1Name
+
+  ServiceTargetGroup1Arn:
+    Description: The export arn for ServiceTargetGroup1
+    Value: !Ref ServiceTargetGroup1
+    Export:
+      Name: ServiceTargetGroup1Arn
+
+  ServiceTargetGroup2Name:
+    Description: The export name for ServiceTargetGroup2
+    Value: !GetAtt ServiceTargetGroup2.TargetGroupName
+    Export:
+      Name: ServiceTargetGroup2Name
+
+  ServiceTargetGroup2Arn:
+    Description: The export arn for ServiceTargetGroup2
+    Value: !Ref ServiceTargetGroup2
+    Export:
+      Name: ServiceTargetGroup2Arn

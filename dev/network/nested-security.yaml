@@ -46,38 +46,9 @@ Resources:
       Description: Ingress from other containers in the same security group
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
-      FromPort: 4000
-      ToPort: 4000
+      FromPort: 8081
+      ToPort: 8081
       SourceSecurityGroupId: !Ref ServiceSecurityGroup
-
-
-  FargateContainerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: !Sub ${EnvironmentName} FargateContainerSecurityGroup
-      GroupDescription: Access to the Fargate containers
-      VpcId: !ImportValue VpcId
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-FargateContainer-sg
-
-  EcsSecurityGroupIngressFromPublicALB:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from the public ALB
-      GroupId: !Ref FargateContainerSecurityGroup
-      IpProtocol: -1
-      SourceSecurityGroupId: !Ref PublicLoadBalancerSG
-
-  EcsSecurityGroupIngressCustomPort:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from other containers in the same security group
-      GroupId: !Ref FargateContainerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 3000
-      ToPort: 3000
-      SourceSecurityGroupId: !Ref FargateContainerSecurityGroup
 
   # Load balancers for getting traffic to containers.
   # This sample template creates one load balancer:
@@ -123,6 +94,7 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-PublicLoadBalancer-SG
 
+
 Outputs:
 
   ServiceSecurityGroup:
@@ -130,12 +102,6 @@ Outputs:
     Value: !Ref ServiceSecurityGroup
     Export:
       Name: ServiceSecurityGroup
-
-  FargateContainerSecurityGroup:
-    Description: A security group used to allow Fargate containers to receive traffic
-    Value: !Ref FargateContainerSecurityGroup
-    Export:
-      Name: FargateContainerSecurityGroup
 
   PublicLoadBalancerSG:
     Description: A security group used to allow Fargate containers to receive traffic

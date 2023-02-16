@@ -43,21 +43,6 @@ Parameters:
     Type: String
     Default: 10.192.130.0/24
 
-  DBSubnet1aCidrBlock:
-    Description: DB Subnet 1a Cidr Block
-    Type: String
-    Default: 10.192.210.0/24
-
-  DBSubnet1bCidrBlock:
-    Description: DB Subnet 1b Cidr Block
-    Type: String
-    Default: 10.192.220.0/24
-
-  DBSubnet1cCidrBlock:
-    Description: DB Subnet 1c Cidr Block
-    Type: String
-    Default: 10.192.230.0/24
-
 Resources:
 
   # 1. Vpc

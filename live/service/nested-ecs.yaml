@@ -1,0 +1,236 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AN ECS Cluster Template creating ECS Task Definition, ECS Service and CloudWatch groups
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: neocrm-api
+
+  ServiceECRRepository:
+    Description: The Graphql ECR Repository
+    Type: String
+    # Default: Graphql
+
+  ServiceCluster:
+    Description: The ECS Cluster for graphql
+    Type: String
+    # Default: Graphql
+
+  DynamodbInstance:
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+
+  HoneyBagerkey:
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+
+  JRapi:
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+
+  ECSTaskExecutionRoleArn:
+      Description: ECS Task Execution Role
+      Type: String
+      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+
+  PrivateSubnet1a:
+      Description: Ref to VPC Subnets
+      Type: String
+      # Default: subnet-0b2b5fa13afbf3479
+
+Resources:
+
+  # 1. ECR Repositories
+
+  # Repository for image of dreamin in production
+
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${ServiceECRRepository}
+
+  # 2. ECS Clusters
+
+  ECSCluster1:
+    Type: AWS::ECS::Cluster
+    Properties:
+      CapacityProviders:
+        - FARGATE
+      ClusterName: !Ref ServiceCluster
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceCluster}
+
+  ECSCluster2:
+    Type: AWS::ECS::Cluster
+    Properties:
+      CapacityProviders:
+        - FARGATE
+      ClusterName: !Ref ServiceCluster
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceCluster}
+
+  # 3. Task Definition
+
+  ServiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Cpu: 512
+          Memory: 1024
+          Image: !Ref ECRRepository
+          PortMappings:
+            - ContainerPort: 4000
+              Protocol: tcp
+              HostPort: 4000
+          Command:
+            - "/neocrm-api"
+            - "webworker"
+            - "--http-addr"
+            - ":8081"
+          Secrets:
+            - Name: DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+              ValueFrom: !Ref DynamodbInstance
+            - Name: HONEYBADGER_API_KEY
+              ValueFrom: !Ref HoneyBagerkey
+            - Name: JR_API_URL
+              ValueFrom: !Ref JRapi
+          # Environment:
+          #   - Name: CORE_SERVICE_HOST
+          #     Value: ""
+          HealthCheck:
+            Command:
+              -  "CMD-SHELL"
+              - "/xray --version || exit 1"
+            Interval: 5
+            Retries: 3
+            StartPeriod: 0
+            Timeout: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${ServiceName}-svc
+        - Name: xray-daemon
+          Cpu: 32
+          Memory: 128
+          Image: amazon/aws-xray-daemon
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+              HostPort: 2000
+          HealthCheck:
+            Command:
+              - "CMD-SHELL"
+              - "/xray --version || exit 1"
+            Interval: 5
+            Retries: 3
+            StartPeriod: 0
+            Timeout: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${ServiceName}-xray
+      Cpu: .5vCPU
+      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn
+      Family: !Sub ${EnvironmentName}-${ServiceName}
+      Memory: 1GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+        - EC2
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
+      TaskRoleArn: !ImportValue ECSTaskRoleArn
+
+  # 4. Cloud Watch Logs
+
+  ECSCluster1CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 30
+      LogGroupName: !Sub "/aws/ecs/${ECSCluster1}"
+
+  ECSCluster2CloudWatchLogsGroupCluster:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 30
+      LogGroupName: !Sub "/aws/ecs/${ECSCluster2}"
+
+  # 5. Service
+
+  # dreamin in production cluster
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster1
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 75
+      DeploymentController:
+        Type: CODE_DEPLOY
+      DesiredCount: 0
+      EnableECSManagedTags: false
+      EnableExecuteCommand: true
+      # HealthCheckGracePeriodSeconds: Number
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 4000
+          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn
+        - ContainerName: graphql
+          ContainerPort: 4000
+          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !ImportValue ServiceSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1a
+      # PlatformVersion: "String"
+      PropagateTags: TASK_DEFINITION
+      SchedulingStrategy: REPLICA
+      ServiceName: !Sub ${ServiceName}
+      TaskDefinition: !Ref ServiceTaskDefinition
+
+
+Outputs:
+
+  ECSCluster1:
+    Description: The name of the GraphqlCluster
+    Value: !Ref ECSCluster1
+    Export:
+      Name: GraphqlCluster
+
+  ECSCluster2:
+    Description: The name of the CoreSvcCluster
+    Value: !Ref ECSCluster2
+    Export:
+      Name: CoreSvcCluster
+
+  ECSServiceName:
+    Description: Export for the ECSService
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: ECSServiceName
+
