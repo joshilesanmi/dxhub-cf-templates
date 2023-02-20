@@ -1,0 +1,57 @@
+# S3 URL for root - https://trox-backend-cf.s3.eu-central-1.amazonaws.com/Test/iam/root.yaml
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: trox
+
+  AccountId:
+    Description: The account id for the client
+    Type: String
+    Default: '292130070793'
+
+  Region:
+    Description: The AWS region for the client infrastructure
+    Type: String
+    Default: eu-central-1
+
+  ServiceName1:
+    Description: The name of first service
+    Type: String
+    Default: ecs-services
+
+  # ServiceName2:
+  #   Description: The name of second service in the ecs cluster
+  #   Type: String
+  #   Default: Productsvc
+
+  # ServiceName3:
+  #   Description: The name of third service in the ecs cluster
+  #   Type: String
+  #   Default: Projectsvc
+
+  # ServiceName4:
+  #   Description: The name of fourth service in the ecs cluster
+  #   Type: String
+  #   Default: Coresvc
+
+  # ServiceName5:
+  #   Description: The name of fifth service in the ecs cluster
+  #   Type: String
+  #   Default: Usersvc
+
+Resources:
+
+  nestedIam:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        AccountId: !Ref AccountId
+        Region: !Ref Region
+        ServiceName1: !Ref ServiceName1
+      TemplateURL: https://trox-backend-cf.s3.eu-central-1.amazonaws.com/Test/iam/nested-iam.yaml
