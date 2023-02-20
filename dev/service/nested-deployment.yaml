@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Codebuild projects & CodePipeline
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: Graphql
+
+  CodestarConnection:
+    Description: Connection to github 
+    Type: String
+    # Default: arn:aws:codestar-connections:eu-central-1:783446665867:connection/71bfae24-020c-4ff8-ad91-e239453c1c21
+
+  RepositoryName:
+    Type: String
+    Description: The GitHub Repo Name
+    # Default: infopark-customers/trox-ab-adapters
+
+  BranchName:
+    Type: String
+    Description: The GitHub Repo Name
+    # Default: feature/infra
+
+  S3ArtifactBucket:
+    Description: CodeBuild Service1 Role Arn
+    Type: String
+    # Default: codepipeline-eu-central-1-403931569879
+
+  # TagCostCenter:
+  #   Description: CostCenter
+  #   Type: String
+  #   # Default: 720
+
+  # TagCostClientId:
+  #   Description: ClientId
+  #   Type: String
+  #   # Default: 100
+
+Resources:
+
+  # 1. CodeBuild Projects
+
+  ServiceCodeBuildApplication:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      BadgeEnabled: false
+      Description: !Sub "Build image for ${EnvironmentName} {ServiceName}"
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+        # EnvironmentVariables:
+        #   - Value: ""
+        #     Type: PLAINTEXT
+        #     Name: CUSTOMER
+
+      Name: !Sub "${EnvironmentName}-${ServiceName}"
+      QueuedTimeoutInMinutes: 480
+      ServiceRole: !ImportValue CodeBuildService1RoleArn # Required
+      Source:
+        BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
+        Type: CODEPIPELINE
+      # Tags:
+      #   - Key: user:costcenter
+      #     Value: !Sub ${TagCostCenter}
+      #   - Key: user:clientid
+      #     Value: !Sub ${TagCostClientId}
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName1}
+      #   - Key: user:purpose
+      #     Value: deployment
+      #   - Key: user:environment
+      #     Value: staging
+      TimeoutInMinutes: 60
+
+  # 2. CodeDeploy Applications
+
+  ServiceCodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
+      ComputePlatform: ECS
+      # Tags:
+      #   - Key: user:costcenter
+      #     Value: !Sub ${TagCostCenter}
+      #   - Key: user:clientid
+      #     Value: !Sub ${TagCostClientId}
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName1}
+      #   - Key: user:purpose
+      #     Value: deployment
+      #   - Key: user:environment
+      #     Value: staging
+
+  # 3. CodeDeploy DeploymentGroups
+
+  ServiceCodeDeployGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref ServiceCodeDeployApplication  # Required
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_REQUEST
+      BlueGreenDeploymentConfiguration:
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+          WaitTimeInMinutes: 0
+        # GreenFleetProvisioningOption:
+        #   Action: DISCOVER_EXISTING
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 60
+      DeploymentGroupName: !Sub "DgpECS-${EnvironmentName}-${ServiceName}"
+      DeploymentStyle:
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+        DeploymentType: BLUE_GREEN
+      ECSServices:
+        - ClusterName: !ImportValue ServiceCluster
+          ServiceName: !ImportValue ServiceECSServiceName
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - ProdTrafficRoute:
+              ListenerArns:
+                - !ImportValue ServiceProdListenerArn
+            TestTrafficRoute:
+              ListenerArns:
+                - !ImportValue ServiceTestListenerArn
+            TargetGroups:
+              - Name: !ImportValue ServiceTargetGroup1Name
+              - Name: !ImportValue ServiceTargetGroup2Name
+      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
+      # Tags:
+      #   - Key: user:costcenter
+      #     Value: !Sub ${TagCostCenter}
+      #   - Key: user:clientid
+      #     Value: !Sub ${TagCostClientId}
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName1}
+      #   - Key: user:purpose
+      #     Value: deployment
+      #   - Key: user:environment
+      #     Value: production
+
+  # 4. CodePipeline
+
+  ServiceCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref S3ArtifactBucket
+        Type: S3
+      Name: !Sub "${EnvironmentName}-${ServiceName}"
+      RestartExecutionOnUpdate: false
+      RoleArn: !ImportValue CodePipelineServiceRole # Required
+      Stages: # Required
+        - Name: ImageSource
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Owner: AWS
+                Category: Source
+                Version: "1"
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref CodestarConnection
+                FullRepositoryId: !Ref RepositoryName
+                BranchName: !Ref BranchName
+                DetectChanges: true
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref ServiceCodeBuildApplication
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Owner: AWS
+                Category: Deploy
+                Version: "1"
+                Provider: CodeDeployToECS
+              Configuration:
+                ApplicationName: !Ref ServiceCodeBuildApplication
+                DeploymentGroupName: !Ref ServiceCodeDeployGroup
+                TaskDefinitionTemplateArtifact: BuildArtifact
+                AppSpecTemplateArtifact: BuildArtifact
+                AppSpecTemplatePath: !Sub "${ServiceName}/codepipeline/appspec.yaml"
+                TaskDefinitionTemplatePath: !Sub "${ServiceName}/codepipeline/taskdef.json"
+                Image1ArtifactName: BuildArtifact
+                Image1ContainerName: IMAGE
+              InputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
+
+# Outputs:

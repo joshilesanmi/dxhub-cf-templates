@@ -214,16 +214,16 @@ Resources:
 Outputs:
 
   ECSCluster1:
-    Description: The name of the GraphqlCluster
+    Description: The name of the ServiceCluster1
     Value: !Ref ECSCluster1
     Export:
-      Name: GraphqlCluster
+      Name: ServiceCluster1
 
   ECSCluster2:
-    Description: The name of the CoreSvcCluster
+    Description: The name of the ServiceCluster2
     Value: !Ref ECSCluster2
     Export:
-      Name: CoreSvcCluster
+      Name: ServiceCluster2
 
   ECSServiceName:
     Description: Export for the ECSService

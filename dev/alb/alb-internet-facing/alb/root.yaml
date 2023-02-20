@@ -9,10 +9,10 @@ Parameters:
     Type: String
     Default: dxhub
 
-  ServiceName1:
+  ServiceName:
     Description: The Environment Name to name the resources
     Type: String
-    Default: neocrm
+    Default: neocrm-api
 
 Resources:
 
@@ -21,6 +21,6 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-        ServiceName1: !Ref ServiceName1
-      TemplateURL: https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/alb/nested-alb.yaml
+        ServiceName: !Ref ServiceName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/alb/internet-facing/nested-alb.yaml
 

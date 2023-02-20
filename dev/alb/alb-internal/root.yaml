@@ -16,5 +16,4 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-      TemplateURL: https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/alb/nested-alb.yaml
-
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/alb/internet-facing/nested-alb.yaml

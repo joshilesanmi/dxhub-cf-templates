@@ -7,6 +7,10 @@ Parameters:
     Description: The Environment Name to name the resources
     Type: String
 
+  ServiceName:
+    Description: The Service Name
+    Type: String
+
   Path:
     Type: String
     Default: "*"
@@ -26,12 +30,12 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub ${EnvironmentName}-${ServiceName2}-1
+      Name: !Sub ${EnvironmentName}-${ServiceName}-1
       Port: 10542
       Protocol: HTTP
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName2}-1
+          Value: !Sub ${EnvironmentName}-${ServiceName}
       TargetType: ip
       UnhealthyThresholdCount: 2
       VpcId: !ImportValue VpcId
@@ -44,17 +48,15 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub ${EnvironmentName}-${ServiceName2}-2
+      Name: !Sub ${EnvironmentName}-${ServiceName}
       Port: 10542
       Protocol: HTTP
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName2}-2
+          Value: !Sub ${EnvironmentName}-${ServiceName}
       TargetType: ip
       UnhealthyThresholdCount: 2
       VpcId: !ImportValue VpcId
-
-
 
   # 1. Load Balancers
 
