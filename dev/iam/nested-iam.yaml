@@ -1,0 +1,352 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Iam Roles for ECS Service
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+  AccountId:
+    Description: The account id for the client
+    Type: String
+    # Default: '783446665867'
+
+  Region:
+    Description: The AWS region for the client infrastructure
+    Type: String
+    # Default: 'eu-central-1'
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: ecs-services
+
+
+Resources:
+
+  # This is an IAM role which authorizes ECS to manage resources on your
+  # account on your behalf, such as updating your load balancer with the
+  # details of where your containers are, so that traffic can reach your
+  # containers.
+
+  # # This is a role which is used by the AWS service ECS itself.
+  # This role cannot be created manually, because that name is reserved for services linked roles. It was created automagically, when creating the first cluster
+  # AWSServiceRoleForECS:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: AWSServiceRoleForECS
+  #     Path: /
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: [ecs.amazonaws.com]
+  #           Action: ['sts:AssumeRole']
+  #     ManagedPolicyArns:
+  #       - 'arn:aws:iam::aws:policy/aws-service-role/AmazonECSServiceRolePolicy'
+
+  # This is a role which is used by the executioner (the thing that starts ECS tasks).
+
+  ECSTaskExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+      RoleName: !Sub ${EnvironmentName}-service-task-execution-role
+      Path: /
+      Policies:
+        -
+          PolicyName: ssm-kms-read
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the executioner to read from ParameterStore
+              - Sid: SsmRead
+                Effect: Allow
+                Action:
+                  - 'ssm:Describe*'
+                  - 'ssm:Get*'
+                  - 'ssm:List*'
+                Resource: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/${EnvironmentName}/*"
+              # Allow the executioner to use a kms key
+              - Sid: KmsUse
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: !Sub "arn:aws:kms:${Region}:${AccountId}:alias/aws/ssm"
+              # Allow the executioner to use keys from the SecretsManager
+              - Sid: SecretsManagerRead
+                Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:${Region}:${AccountId}:secret:${EnvironmentName}/*"
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-service-task-execution
+
+  # # This is a role which is used by the ECS tasks themselves.
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-task-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+      Policies:
+        -
+          PolicyName: cw-logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the ECS Tasks to write logs
+              - Sid: CwLogsWrite
+                Effect: "Allow"
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:/aws/ecs/${EnvironmentName}*"
+        -
+          PolicyName: ssm-channel-handling
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: SsmChannelHandling
+                Effect: "Allow"
+                Action:
+                  # Allow the ECS Tasks to handle channels
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: '*'
+        -
+          PolicyName: cw-putmetrics
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CwPutMetricData
+                Effect: "Allow"
+                Action:
+                # Allow the ECS Tasks to put metric data to CloudWatch (monitoring)
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+
+
+  CodeBuildService1Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com]
+            Action: ['sts:AssumeRole']
+        Version: "2012-10-17"
+      RoleName: !Sub codebuild-${EnvironmentName}-service-role
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::${AccountId}:policy/AWSCodePipelineServiceRole"
+      Path: /
+      Policies:
+        -
+          PolicyName: codebuild-base-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CwLogs
+                Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:/aws/codebuild/${EnvironmentName}-*"
+              - Sid: S3WriteCodePipelineArtifacts
+                Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketLocation'
+                Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
+              - Sid: CodeBuildReports
+                Effect: Allow
+                Action:
+                  - 'codebuild:CreateReportGroup'
+                  - 'codebuild:CreateReport'
+                  - 'codebuild:UpdateReport'
+                  - 'codebuild:BatchPutTestCases'
+                  - 'codebuild:BatchPutCodeCoverages'
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:BatchGetBuilds'
+                Resource: !Sub "arn:aws:codebuild:${Region}:${AccountId}:report-group/${EnvironmentName}-*"
+              - Sid: SecretsManagerGet
+                Effect: Allow
+                Action:
+                  - 'secretsmanager:DescribeSecret'
+                  - 'secretsmanager:GetSecretValue'
+                Resource: !Sub "arn:aws:secretsmanager:${Region}:${AccountId}:secret:${EnvironmentName}/*"
+        -
+          PolicyName: ecr-build-image
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: EcrAuth
+                Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                Resource: '*'
+              - Sid: EcrPush
+                Effect: Allow
+                Action:
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:PutImage'
+                  - 'ecr:InitiateLayerUpload'
+                  - 'ecr:UploadLayerPart'
+                  - 'ecr:CompleteLayerUpload'
+                Resource: !Sub "arn:aws:ecr:${Region}:${AccountId}:repository/${EnvironmentName}-*"
+        -
+          PolicyName: ssm-get-parameters
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid:  SsmList
+                Effect: Allow
+                Action:
+                  - 'ssm:DescribeParameters'
+                Resource: '*'
+              - Sid: SsmRead
+                Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                Resource:
+                  - !Sub "arn:aws:ssm:e${Region}:${AccountId}:parameter/codebuild*/*"
+                  - !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/${EnvironmentName}*/*"
+
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [codedeploy.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
+      RoleName: AWSServiceForCodeDeploy2ECS
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [codepipeline.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      RoleName: !Sub codepipeline-${EnvironmentName}-service-role
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::${AccountId}:policy/AWSCodePipelineServiceRole"
+      Policies:
+        -
+          PolicyName: codepipeline-base-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CWlogs
+                Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
+              - Sid: S3Artifacts
+                Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketLocation'
+                Resource: "arn:aws:s3:::codepipeline-eu-central-1-*"
+              - Sid: ECSTasks
+                Effect: Allow
+                Action:
+                  - 'ecs:DescribeServices'
+                  - 'ecs:DescribeTaskDefinition'
+                  - 'ecs:DescribeTasks'
+                  - 'ecs:ListTasks'
+                  - 'ecs:RegisterTaskDefinition'
+                  - 'ecs:UpdateService'
+                Resource: "*"
+              - Sid: CodeBuildReports
+                Effect: Allow
+                Action:
+                  - 'codebuild:CreateReportGroup'
+                  - 'codebuild:CreateReport'
+                  - 'codebuild:UpdateReport'
+                  - 'codebuild:BatchPutTestCases'
+                  - 'codebuild:BatchPutCodeCoverages'
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:BatchGetBuilds'
+                Resource: !Sub "arn:aws:codebuild:${Region}:${AccountId}:report-group/${EnvironmentName}-*"
+
+Outputs:
+  ECSTaskExecutionRoleArn:
+    Description: Export value for the ECSTaskExecutionRole
+    Value: !GetAtt ECSTaskExecutionRole.Arn
+    Export:
+      Name: ECSTaskExecutionRoleArn
+      # arn:aws:iam::698195851833:role/medlmu-service-task-execution-role
+
+  ECSTaskRoleArn:
+    Description: Export Value for the ECSTaskRole
+    Value: !GetAtt ECSTaskRole.Arn
+    Export:
+      Name: ECSTaskRoleArn
+      # arn:aws:iam::698195851833:role/medlmu-dreamin-ecs-task-role
+
+  CodeBuildService1RoleArn:
+    Description: Export Arn Value for the CodeBuild Service1 Role
+    Value: !GetAtt CodeBuildService1Role.Arn
+    Export:
+      Name: CodeBuildService1RoleArn
+      # arn:aws:iam::698195851833:role/codebuild-medlmu-service-role
+
+  CodeDeployServiceRoleArn:
+    Description: Export Arn Value for the CodeDeploy Service Role
+    Value: !GetAtt CodeDeployServiceRole.Arn
+    Export:
+      Name: CodeDeployServiceRoleArn
+      # arn:aws:iam::698195851833:role/AWSServiceForCodeDeploy2ECS
+
+  CodePipelineServiceRoleArn:
+    Description: Export Arn Value for the CodePipeline Service Role
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: CodePipelineServiceRoleArn
+      # arn:aws:iam::698195851833:role/codepipeline-medlmu-service-role
