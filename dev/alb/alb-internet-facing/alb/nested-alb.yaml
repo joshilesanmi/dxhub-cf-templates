@@ -6,11 +6,12 @@ Parameters:
   EnvironmentName:
     Description: The Environment Name to name the resources
     Type: String
-    Default: dxhub
+    # Default: dxhub
 
   ServiceName:
     Description: The Service Name
     Type: String
+    # Default: neocrm-api
 
   Certificate:
     Description: The Certificate for the listeners
@@ -19,32 +20,32 @@ Parameters:
 
   Path:
     Type: String
-    Default: "*"
     Description: A path on the public load balancer that this service
                  should be connected to. Use * to send all load balancer
                  traffic to this service.
+    Default: "*"
 
 Resources:
 
   # 1. Target Groups
 
-  DefaultTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 6
-      HealthCheckPath: /healthcheck
-      # HealthCheckPort: "String"
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      Name: !Sub ${EnvironmentName}-DefaultTargetGroup
-      Port: 80
-      Protocol: HTTP
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-DefaultTargetGroup
-      UnhealthyThresholdCount: 2
-      VpcId: !ImportValue VpcId
+  # DefaultTargetGroup:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     HealthCheckIntervalSeconds: 6
+  #     HealthCheckPath: /healthcheck
+  #     # HealthCheckPort: "String"
+  #     HealthCheckProtocol: HTTP
+  #     HealthCheckTimeoutSeconds: 5
+  #     HealthyThresholdCount: 2
+  #     Name: !Sub ${EnvironmentName}-DefaultTargetGroup
+  #     Port: 80
+  #     Protocol: HTTP
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${EnvironmentName}-DefaultTargetGroup
+  #     UnhealthyThresholdCount: 2
+  #     VpcId: !ImportValue VpcId
 
   ServiceTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -84,27 +85,28 @@ Resources:
 
   # 1. Load Balancers
 
-  PublicLoadBalancer:
+  # PublicLoadBalancer:
+  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  #   Properties:
+  #     Name: !Sub ${EnvironmentName}-public-default
+  #     Scheme: internet-facing
+  #     SecurityGroups: [!ImportValue PublicLoadBalancerSG]
+  #     Subnets:
+  #       # The load balancer is placed into the public subnets, so that traffic
+  #       # from the internet can reach the load balancer directly via the internet gateway
+  #       - !ImportValue PublicSubnet1a
+  #       - !ImportValue PublicSubnet1b
+  #       - !ImportValue PublicSubnet1c
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${EnvironmentName} PublicLoadBalancer
+
+# The load balancer name 'dxhub-{ServiceName}' can only contain characters that are alphanumeric characters and hyphens(-)
+
+  ServiceALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${EnvironmentName}
-      Scheme: internet-facing
-      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
-      Subnets:
-        # The load balancer is placed into the public subnets, so that traffic
-        # from the internet can reach the load balancer directly via the internet gateway
-        - !ImportValue PublicSubnet1a
-        - !ImportValue PublicSubnet1b
-        - !ImportValue PublicSubnet1c
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName} PublicLoadBalancer
-
-
-  ServiceLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Name: !Sub ${EnvironmentName}-{ServiceName}
+      Name: !Sub ${ServiceName}
       Scheme: internet-facing
       SecurityGroups: [!ImportValue ServiceSecurityGroup]
       Subnets:
@@ -113,7 +115,21 @@ Resources:
         - !ImportValue PublicSubnet1c
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} {ServiceName} ServiceLoadBalancer
+          Value: !Sub ${EnvironmentName}-alb
+
+  # ServiceLoadBalancer:
+  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  #   Properties:
+  #     Name: !Sub ${ServiceName}
+  #     Scheme: internet-facing
+  #     SecurityGroups: [!ImportValue ServiceSecurityGroup]
+  #     Subnets:
+  #       - !ImportValue PublicSubnet1a
+  #       - !ImportValue PublicSubnet1b
+  #       - !ImportValue PublicSubnet1c
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${EnvironmentName}-{ServiceName}-alb
 
 # listeners
 
@@ -129,7 +145,7 @@ Resources:
             Protocol: HTTPS
             Query: "#{query}"
             StatusCode: HTTP_301
-      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceALB # Required
       Port: 80
       Protocol: HTTP
 
@@ -141,7 +157,7 @@ Resources:
       DefaultActions: # Required
         - TargetGroupArn: !Ref ServiceTargetGroup1
           Type: forward
-      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceALB # Required
       Port: 443
       Protocol: HTTPS
 
@@ -153,7 +169,7 @@ Resources:
       DefaultActions: # Required
         - TargetGroupArn: !Ref ServiceTargetGroup2
           Type: forward
-      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceALB # Required
       Port: 8443
       Protocol: HTTPS
 
@@ -207,23 +223,23 @@ Resources:
 
 Outputs:
 
-  ExternalUrl:
-    Description: The url of the external load balancer
-    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
-    Export:
-      Name: ExternalUrl
+  # ExternalUrl:
+  #   Description: The url of the external load balancer
+  #   Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
+  #   Export:
+  #     Name: ExternalUrl
 
   ServiceLoadBalanceUrl:
     Description: The url of the external load balancer
-    Value: !Join ['', ['http://', !GetAtt 'ServiceLoadBalancer.DNSName']]
+    Value: !Join ['', ['http://', !GetAtt 'ServiceALB.DNSName']]
     Export:
       Name: ServiceLoadBalanceUrl
 
-  PublicLoadBalancer:
-    Description: The export name for the Public LoadBalancer
-    Value: !Ref PublicLoadBalancer
-    Export:
-      Name: PublicLoadBalancer
+  # PublicLoadBalancerArn:
+  #   Description: The export arn for the Public LoadBalancer
+  #   Value: !Ref PublicLoadBalancer
+  #   Export:
+  #     Name: PublicLoadBalancerArn
 
   ServiceTargetGroup1Name:
     Description: The export name for ServiceTargetGroup1

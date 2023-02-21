@@ -13,35 +13,21 @@ Parameters:
     Type: String
     Default: neocrm-api
 
-  ServiceECRRepository:
-    Description: The Service ECR Repository
-    Type: String
-    Default: neocrm-api
-
-  ServiceCluster:
-    Description: The ECS Cluster for the service
-    Type: String
-    Default: neocrm-svc
-
   DynamodbInstance:
       Description: DbHost from Parameter Store for the container
       Type: String
-      Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   HoneyBagerkey:
       Description: DbHost from Parameter Store for the container
       Type: String
-      Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   JRapi:
       Description: DbHost from Parameter Store for the container
       Type: String
-      Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
-  ECSTaskExecutionRoleArn:
-      Description: ECS Task Execution Role
-      Type: String
-      Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
 Resources:
 
@@ -51,12 +37,8 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
+        DynamodbInstance: !Ref DynamodbInstance
+        HoneyBagerkey: !Ref HoneyBagerkey
+        JRapi: !Ref JRapi
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/service/nested-ecs.yaml
 
-  nestedDeployment:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        EnvironmentName: !Ref EnvironmentName
-        ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/service/nested-deployment.yaml

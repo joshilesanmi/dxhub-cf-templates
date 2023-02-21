@@ -13,46 +13,29 @@ Parameters:
     Type: String
     # Default: neocrm-api
 
-  ServiceECRRepository:
-    Description: The Graphql ECR Repository
-    Type: String
-    # Default: Graphql
-
-  ServiceCluster:
-    Description: The ECS Cluster for graphql
-    Type: String
-    # Default: Graphql
-
   DynamodbInstance:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   HoneyBagerkey:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   JRapi:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
-
-  PrivateSubnet1a:
-      Description: Ref to VPC Subnets
-      Type: String
-      # Default: subnet-0b2b5fa13afbf3479
+      # Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
 Resources:
 
   # 1. ECR Repositories
 
-  # Repository for image of dreamin in production
-
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Sub ${EnvironmentName}-${ServiceECRRepository}
+      RepositoryName: !Sub ${EnvironmentName}-${ServiceName}
 
   # 2. ECS Clusters
 
@@ -61,20 +44,10 @@ Resources:
     Properties:
       CapacityProviders:
         - FARGATE
-      ClusterName: !Ref ServiceCluster
+      ClusterName: !Ref EnvironmentName
       Tags:
         - Key: Name
-          Value: !Sub ${ServiceCluster}
-
-  ECSCluster2:
-    Type: AWS::ECS::Cluster
-    Properties:
-      CapacityProviders:
-        - FARGATE
-      ClusterName: !Ref ServiceCluster
-      Tags:
-        - Key: Name
-          Value: !Sub ${ServiceCluster}
+          Value: !Sub ${EnvironmentName}
 
   # 3. Task Definition
 
@@ -83,8 +56,7 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Name: !Ref ServiceName
-          Cpu: 512
-          Memory: 1024
+          Memory: 128
           Image: !Ref ECRRepository
           PortMappings:
             - ContainerPort: 8081
@@ -102,13 +74,15 @@ Resources:
               ValueFrom: !Ref HoneyBagerkey
             - Name: JR_API_URL
               ValueFrom: !Ref JRapi
-          # Environment:
-          #   - Name: CORE_SERVICE_HOST
-          #     Value: ""
+          Environment:
+            - Name: AWS_XRAY_CONTEXT_MISSING
+              Value: LOG_ERROR
+            - Name: HONEYBADGER_ENV
+              Value: production
           HealthCheck:
             Command:
               -  "CMD-SHELL"
-              - "/xray --version || exit 1"
+              - "curl http://127.0.0.1:8081/health_check || exit 1"
             Interval: 5
             Retries: 3
             StartPeriod: 0
@@ -119,7 +93,7 @@ Resources:
               awslogs-create-group: true
               awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
               awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: !Sub ${ServiceName}-svc
+              awslogs-stream-prefix: !Sub ${ServiceName}
         - Name: xray-daemon
           Cpu: 32
           Memory: 128
@@ -164,15 +138,7 @@ Resources:
       RetentionInDays: 30
       LogGroupName: !Sub "/aws/ecs/${ECSCluster1}"
 
-  ECSCluster2CloudWatchLogsGroupCluster:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 30
-      LogGroupName: !Sub "/aws/ecs/${ECSCluster2}"
-
   # 5. Service
-
-  # dreamin in production cluster
 
   ECSService:
     Type: AWS::ECS::Service
@@ -219,11 +185,11 @@ Outputs:
     Export:
       Name: ServiceCluster1
 
-  ECSCluster2:
-    Description: The name of the ServiceCluster2
-    Value: !Ref ECSCluster2
-    Export:
-      Name: ServiceCluster2
+  # ECSCluster2:
+  #   Description: The name of the ServiceCluster2
+  #   Value: !Ref ECSCluster2
+  #   Export:
+  #     Name: ServiceCluster2
 
   ECSServiceName:
     Description: Export for the ECSService

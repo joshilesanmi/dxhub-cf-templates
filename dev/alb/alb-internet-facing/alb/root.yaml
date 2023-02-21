@@ -14,6 +14,11 @@ Parameters:
     Type: String
     Default: neocrm-api
 
+  Certificate:
+    Description: The Certificate for the listeners
+    Type: String
+    Default: arn:aws:acm:eu-central-1:012615398682:certificate/b697e4c5-8dd6-4d90-b6e4-0e729673584d
+
 Resources:
 
   nestedALB:
@@ -22,5 +27,7 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
+        Certificate: !Ref Certificate
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/alb/internet-facing/nested-alb.yaml
 
+  

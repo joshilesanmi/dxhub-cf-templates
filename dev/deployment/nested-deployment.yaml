@@ -6,14 +6,15 @@ Parameters:
   EnvironmentName:
     Description: The Stack Name for naming the resources
     Type: String
+    # Default: trox-backend-new
 
-  ServiceName:
+  ServiceName1:
     Description: The name of first service
     Type: String
-    # Default: Graphql
+    # Default: GraphqlSvc
 
   CodestarConnection:
-    Description: Connection to github 
+    Description: Connectio to github organization infopark-customers
     Type: String
     # Default: arn:aws:codestar-connections:eu-central-1:783446665867:connection/71bfae24-020c-4ff8-ad91-e239453c1c21
 
@@ -32,82 +33,62 @@ Parameters:
     Type: String
     # Default: codepipeline-eu-central-1-403931569879
 
-  # TagCostCenter:
-  #   Description: CostCenter
-  #   Type: String
-  #   # Default: 720
-
-  # TagCostClientId:
-  #   Description: ClientId
-  #   Type: String
-  #   # Default: 100
-
 Resources:
 
   # 1. CodeBuild Projects
 
-  ServiceCodeBuildApplication:
+  GraphqlCodeBuildApplication:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
         Type: CODEPIPELINE
       BadgeEnabled: false
-      Description: !Sub "Build image for ${EnvironmentName} {ServiceName}"
+      Description: !Sub "Build image for ${EnvironmentName} {ServiceName1}"
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         ImagePullCredentialsType: CODEBUILD
         PrivilegedMode: true
         Type: LINUX_CONTAINER
-        # EnvironmentVariables:
-        #   - Value: ""
-        #     Type: PLAINTEXT
-        #     Name: CUSTOMER
-
-      Name: !Sub "${EnvironmentName}-${ServiceName}"
+        EnvironmentVariables:
+          - Value: trox
+            Type: PLAINTEXT
+            Name: CUSTOMER
+          - Value: trox-backend
+            Type: PLAINTEXT
+            Name: PROJECT
+      Name: !Sub "${EnvironmentName}-${ServiceName1}-develop-image"
       QueuedTimeoutInMinutes: 480
       ServiceRole: !ImportValue CodeBuildService1RoleArn # Required
       Source:
-        BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
+        BuildSpec: graphqlService/codepipeline/buildspec-image.yml
         Type: CODEPIPELINE
-      # Tags:
-      #   - Key: user:costcenter
-      #     Value: !Sub ${TagCostCenter}
-      #   - Key: user:clientid
-      #     Value: !Sub ${TagCostClientId}
-      #   - Key: user:project
-      #     Value: !Sub ${ServiceName1}
-      #   - Key: user:purpose
-      #     Value: deployment
-      #   - Key: user:environment
-      #     Value: staging
+      Tags:
+        - Key: user:project
+          Value: !Sub ${ServiceName1}
+        - Key: user:purpose
+          Value: deployment
       TimeoutInMinutes: 60
 
   # 2. CodeDeploy Applications
 
-  ServiceCodeDeployApplication:
+  GraphqlCodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
+      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName1}"
       ComputePlatform: ECS
-      # Tags:
-      #   - Key: user:costcenter
-      #     Value: !Sub ${TagCostCenter}
-      #   - Key: user:clientid
-      #     Value: !Sub ${TagCostClientId}
-      #   - Key: user:project
-      #     Value: !Sub ${ServiceName1}
-      #   - Key: user:purpose
-      #     Value: deployment
-      #   - Key: user:environment
-      #     Value: staging
+      Tags:
+        - Key: user:project
+          Value: !Sub ${ServiceName1}
+        - Key: user:purpose
+          Value: deployment
 
   # 3. CodeDeploy DeploymentGroups
 
-  ServiceCodeDeployGroup:
+  GraphqlCodeDeployGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
-      ApplicationName: !Ref ServiceCodeDeployApplication  # Required
+      ApplicationName: !Ref GraphqlCodeDeployApplication  # Required
       AutoRollbackConfiguration:
         Enabled: true
         Events:
@@ -122,52 +103,47 @@ Resources:
         TerminateBlueInstancesOnDeploymentSuccess:
           Action: TERMINATE
           TerminationWaitTimeInMinutes: 60
-      DeploymentGroupName: !Sub "DgpECS-${EnvironmentName}-${ServiceName}"
+      DeploymentGroupName: !Sub "DgpECS-${EnvironmentName}-${ServiceName1}"
       DeploymentStyle:
         DeploymentOption: WITH_TRAFFIC_CONTROL
         DeploymentType: BLUE_GREEN
       ECSServices:
-        - ClusterName: !ImportValue ServiceCluster
-          ServiceName: !ImportValue ServiceECSServiceName
+        - ClusterName: !ImportValue TroxCluster
+          ServiceName: !ImportValue GraphqlECSServiceName
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceProdListenerArn
+                - !ImportValue GraphqlProdListenerArn
             TestTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceTestListenerArn
+                - !ImportValue GraphqlTestListenerArn
             TargetGroups:
-              - Name: !ImportValue ServiceTargetGroup1Name
-              - Name: !ImportValue ServiceTargetGroup2Name
+              - Name: !ImportValue GraphqlTargetGroup1Name
+              - Name: !ImportValue GraphqlTargetGroup2Name
       ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
-      # Tags:
-      #   - Key: user:costcenter
-      #     Value: !Sub ${TagCostCenter}
-      #   - Key: user:clientid
-      #     Value: !Sub ${TagCostClientId}
-      #   - Key: user:project
-      #     Value: !Sub ${ServiceName1}
-      #   - Key: user:purpose
-      #     Value: deployment
-      #   - Key: user:environment
-      #     Value: production
+      Tags:
+        - Key: user:project
+          Value: !Sub ${ServiceName1}
+        - Key: user:purpose
+          Value: deployment
 
   # 4. CodePipeline
 
-  ServiceCodePipeline:
+  GraphqlCodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
         Location: !Ref S3ArtifactBucket
         Type: S3
-      Name: !Sub "${EnvironmentName}-${ServiceName}"
+      Name: !Sub "${EnvironmentName}-${ServiceName1}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue CodePipelineServiceRole # Required
+      RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
       Stages: # Required
         - Name: ImageSource
           Actions:
             - Name: Source
+              Namespace: SourceVariables
               ActionTypeId:
                 Owner: AWS
                 Category: Source
@@ -191,32 +167,32 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref ServiceCodeBuildApplication
+                ProjectName: !Ref GraphqlCodeBuildApplication
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildArtifacts
               RunOrder: 1
 
-        - Name: Deploy
-          Actions:
-            - Name: Deploy
-              ActionTypeId:
-                Owner: AWS
-                Category: Deploy
-                Version: "1"
-                Provider: CodeDeployToECS
-              Configuration:
-                ApplicationName: !Ref ServiceCodeBuildApplication
-                DeploymentGroupName: !Ref ServiceCodeDeployGroup
-                TaskDefinitionTemplateArtifact: BuildArtifact
-                AppSpecTemplateArtifact: BuildArtifact
-                AppSpecTemplatePath: !Sub "${ServiceName}/codepipeline/appspec.yaml"
-                TaskDefinitionTemplatePath: !Sub "${ServiceName}/codepipeline/taskdef.json"
-                Image1ArtifactName: BuildArtifact
-                Image1ContainerName: IMAGE
-              InputArtifacts:
-                - Name: BuildArtifacts
-              RunOrder: 1
+        # - Name: Deploy
+        #   Actions:
+        #     - Name: Deploy
+        #       ActionTypeId:
+        #         Owner: AWS
+        #         Category: Deploy
+        #         Version: "1"
+        #         Provider: CodeDeployToECS
+        #       Configuration:
+        #         ApplicationName: !Ref GraphqlCodeDeployApplication
+        #         DeploymentGroupName: !Ref GraphqlCodeDeployGroup
+        #         TaskDefinitionTemplateArtifact: BuildArtifacts
+        #         AppSpecTemplateArtifact: BuildArtifacts
+        #         AppSpecTemplatePath: appspec.yaml
+        #         TaskDefinitionTemplatePath: taskdef.json
+        #         Image1ArtifactName: BuildArtifacts
+        #         Image1ContainerName: IMAGE
+        #       InputArtifacts:
+        #         - Name: BuildArtifacts
+        #       RunOrder: 1
 
 # Outputs:

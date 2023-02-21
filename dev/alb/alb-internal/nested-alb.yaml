@@ -22,7 +22,7 @@ Resources:
 
   # 1. Target Groups
 
-  ProductSvcTargetGroup1:
+  ServiceTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 20
@@ -40,7 +40,7 @@ Resources:
       UnhealthyThresholdCount: 2
       VpcId: !ImportValue VpcId
 
-  ProductSvcTargetGroup2:
+  ServiceTargetGroup2:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 20
@@ -48,7 +48,7 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub ${EnvironmentName}-${ServiceName}
+      Name: !Sub ${EnvironmentName}-${ServiceName}-2
       Port: 10542
       Protocol: HTTP
       Tags:
@@ -60,43 +60,43 @@ Resources:
 
   # 1. Load Balancers
 
-  ProductSvcLoadBalancer:
+  ServiceLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${EnvironmentName}-productsvc
+      Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internal
-      SecurityGroups: [!ImportValue ProductSvcSecurityGroup]
+      SecurityGroups: [!ImportValue ServiceSecurityGroup]
       Subnets:
         - !ImportValue PrivateSubnet1a
         - !ImportValue PrivateSubnet1b
         - !ImportValue PrivateSubnet1c
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} ProductSvcLoadBalancer
+          Value: !Sub ${EnvironmentName} ServiceLoadBalancer
 
 # listeners
 
-  ProductSvcProdListener:
+  ServiceProdListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       Certificates:
         - CertificateArn: !Ref Certificate
       DefaultActions: # Required
-        - TargetGroupArn: !Ref ProductSvcTargetGroup1
+        - TargetGroupArn: !Ref ServiceTargetGroup1
           Type: forward
-      LoadBalancerArn: !Ref ProductSvcLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
       Port: 443
       Protocol: HTTPS
 
-  ProductSvcTestListener:
+  ServiceTestListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       Certificates:
         - CertificateArn: !Ref Certificate
       DefaultActions: # Required
-        - TargetGroupArn: !Ref ProductSvcTargetGroup2
+        - TargetGroupArn: !Ref ServiceTargetGroup2
           Type: forward
-      LoadBalancerArn: !Ref ProductSvcLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
       Port: 8443
       Protocol: HTTPS
 
@@ -104,28 +104,28 @@ Resources:
 
   # graphql listener rules
 
-  ProjectSvcProdListenerRule:
+  ServiceProdListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       Actions: # Required
-        - TargetGroupArn: !Ref ProjectSvcTargetGroup1
+        - TargetGroupArn: !Ref ServiceTargetGroup1
           Type: forward
       Conditions: # Required
         - Field: path-pattern
           Values: [!Ref 'Path']
-      ListenerArn: !Ref ProjectSvcProdListener # Required
+      ListenerArn: !Ref ServiceProdListener # Required
       Priority: 1 # Required
 
-  ProjectSvcTestListenerRule:
+  ServiceTestListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       Actions: # Required
-        - TargetGroupArn: !Ref ProjectSvcTargetGroup2
+        - TargetGroupArn: !Ref ServiceTargetGroup2
           Type: forward
       Conditions: # Required
         - Field: path-pattern
           Values: [!Ref 'Path']
-      ListenerArn: !Ref ProjectSvcTestListener # Required
+      ListenerArn: !Ref ServiceTestListener # Required
       Priority: 1 # Required
 
 Outputs:

@@ -1,0 +1,50 @@
+# S3 URL for root - https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/deployment/root.yaml
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: trox
+
+  ServiceName1:
+    Description: The name of first service
+    Type: String
+    Default: GraphqlSvc
+
+  CodestarConnection:
+    Description: Connectio to github organization infopark-customers
+    Type: String
+    Default: arn:aws:codestar-connections:eu-central-1:783446665867:connection/71bfae24-020c-4ff8-ad91-e239453c1c21
+
+  RepositoryName:
+    Type: String
+    Description: The GitHub Repo Name
+    Default: infopark-customers/trox-ab-adapters
+
+  BranchName:
+    Type: String
+    Description: The GitHub Repo Name
+    Default: trox-test
+
+  S3ArtifactBucket:
+    Description: CodeBuild Service1 Role Arn
+    Type: String
+    Default: codepipeline-eu-central-1-403931569879
+
+
+Resources:
+
+  nestedDeployment:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName1: !Ref ServiceName1
+        CodestarConnection: !Ref CodestarConnection
+        RepositoryName: !Ref RepositoryName
+        BranchName: !Ref BranchName
+        S3ArtifactBucket: !Ref S3ArtifactBucket
+      TemplateURL: https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/deployment/nested-deployment.yaml

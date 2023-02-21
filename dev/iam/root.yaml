@@ -12,17 +12,17 @@ Parameters:
   AccountId:
     Description: The account id for the client
     Type: String
-    # Default: '292130070793'
+    Default: '012615398682'
 
   Region:
     Description: The AWS region for the client infrastructure
     Type: String
-    # Default: eu-central-1
+    Default: eu-west-2
 
-  ServiceName1:
+  ServiceName:
     Description: The name of first service
     Type: String
-    Default: ecs-services
+    Default: neocrm-api
 
 Resources:
 
@@ -33,5 +33,5 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         AccountId: !Ref AccountId
         Region: !Ref Region
-        ServiceName1: !Ref ServiceName1
+        ServiceName: !Ref ServiceName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/nested-iam.yaml

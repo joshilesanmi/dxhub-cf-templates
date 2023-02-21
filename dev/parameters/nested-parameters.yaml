@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A template to create parameter store values
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+Resources:
+
+  DynamoDbInstanceTable:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Dynamo DB Instance table name
+      Name: !Sub /${EnvironmentName}/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Tier: Standard
+      Type: String
+      Value: jr-instance-configuration
+
+  JRApiUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Jr Api Url
+      Name: !Sub /${EnvironmentName}/JR_API_URL
+      Tier: Standard
+      Type: String
+      Value: https://api.justrelate.com
+
+Outputs:
+
+  DynamoDbInstanceTableName:
+    Description: The parameter name for DynamoDbInstanceTable
+    Value: !Ref DynamoDbInstanceTable
+    Export:
+      Name: DynamoDbInstanceTableName
+
+  JRApiUrlName:
+    Description: The parameter name for JRApiUrl
+    Value: !Ref JRApiUrl
+    Export:
+      Name: JRApiUrlName
