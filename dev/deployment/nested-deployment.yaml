@@ -6,30 +6,30 @@ Parameters:
   EnvironmentName:
     Description: The Stack Name for naming the resources
     Type: String
-    # Default: trox-backend-new
+    # Default: dxhub
 
-  ServiceName1:
+  ServiceName:
     Description: The name of first service
     Type: String
-    # Default: GraphqlSvc
+    # Default: neocrm-api
 
   CodestarConnection:
-    Description: Connectio to github organization infopark-customers
+    Description: Connection to github organization
     Type: String
     # Default: arn:aws:codestar-connections:eu-central-1:783446665867:connection/71bfae24-020c-4ff8-ad91-e239453c1c21
 
   RepositoryName:
     Type: String
     Description: The GitHub Repo Name
-    # Default: infopark-customers/trox-ab-adapters
+    # Default: infopark/dxhub
 
   BranchName:
     Type: String
     Description: The GitHub Repo Name
-    # Default: feature/infra
+    # Default: neocrm-dev
 
   S3ArtifactBucket:
-    Description: CodeBuild Service1 Role Arn
+    Description: CodeBuild Service Role Arn
     Type: String
     # Default: codepipeline-eu-central-1-403931569879
 
@@ -37,35 +37,32 @@ Resources:
 
   # 1. CodeBuild Projects
 
-  GraphqlCodeBuildApplication:
+  ServiceCodeBuildApplication:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
         Type: CODEPIPELINE
       BadgeEnabled: false
-      Description: !Sub "Build image for ${EnvironmentName} {ServiceName1}"
+      Description: !Sub "Build image for ${EnvironmentName} {ServiceName}"
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         ImagePullCredentialsType: CODEBUILD
         PrivilegedMode: true
         Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Value: trox
-            Type: PLAINTEXT
-            Name: CUSTOMER
-          - Value: trox-backend
-            Type: PLAINTEXT
-            Name: PROJECT
-      Name: !Sub "${EnvironmentName}-${ServiceName1}-develop-image"
+        # EnvironmentVariables:
+        #   - Value:
+        #     Type: PLAINTEXT
+        #     Name: CUSTOMER
+      Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildService1RoleArn # Required
+      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Required
       Source:
-        BuildSpec: graphqlService/codepipeline/buildspec-image.yml
+        BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
       Tags:
         - Key: user:project
-          Value: !Sub ${ServiceName1}
+          Value: !Sub ${ServiceName}
         - Key: user:purpose
           Value: deployment
       TimeoutInMinutes: 60
@@ -75,11 +72,11 @@ Resources:
   GraphqlCodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName1}"
+      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
       ComputePlatform: ECS
       Tags:
         - Key: user:project
-          Value: !Sub ${ServiceName1}
+          Value: !Sub ${ServiceName}
         - Key: user:purpose
           Value: deployment
 
@@ -103,13 +100,13 @@ Resources:
         TerminateBlueInstancesOnDeploymentSuccess:
           Action: TERMINATE
           TerminationWaitTimeInMinutes: 60
-      DeploymentGroupName: !Sub "DgpECS-${EnvironmentName}-${ServiceName1}"
+      DeploymentGroupName: !Sub "DgpECS-${EnvironmentName}-${ServiceName}"
       DeploymentStyle:
         DeploymentOption: WITH_TRAFFIC_CONTROL
         DeploymentType: BLUE_GREEN
       ECSServices:
-        - ClusterName: !ImportValue TroxCluster
-          ServiceName: !ImportValue GraphqlECSServiceName
+        - ClusterName: !ImportValue ServiceCluster1
+          ServiceName: !ImportValue ECSServiceName
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
@@ -119,12 +116,12 @@ Resources:
               ListenerArns:
                 - !ImportValue GraphqlTestListenerArn
             TargetGroups:
-              - Name: !ImportValue GraphqlTargetGroup1Name
-              - Name: !ImportValue GraphqlTargetGroup2Name
+              - Name: !ImportValue ServiceTargetGroup1Name
+              - Name: !ImportValue ServiceTargetGroup2Name
       ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
       Tags:
         - Key: user:project
-          Value: !Sub ${ServiceName1}
+          Value: !Sub ${ServiceName}
         - Key: user:purpose
           Value: deployment
 
@@ -136,7 +133,7 @@ Resources:
       ArtifactStore:
         Location: !Ref S3ArtifactBucket
         Type: S3
-      Name: !Sub "${EnvironmentName}-${ServiceName1}"
+      Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
       RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
       Stages: # Required
@@ -167,7 +164,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref GraphqlCodeBuildApplication
+                ProjectName: !Ref ServiceCodeBuildApplication
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
