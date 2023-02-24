@@ -114,7 +114,7 @@ Resources:
             TargetGroups:
               - Name: !ImportValue ServiceTargetGroup1Name
               - Name: !ImportValue ServiceTargetGroup2Name
-      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
+      ServiceRoleArn: !ImportValue GithubTriggerCodePipelineArn # Required
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}

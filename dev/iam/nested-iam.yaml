@@ -242,78 +242,117 @@ Resources:
                   - !Sub "arn:aws:ssm:e${Region}:${AccountId}:parameter/codebuild*/*"
                   - !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/${EnvironmentName}*/*"
 
-  # CodeDeployServiceRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         - Sid: ''
-  #           Effect: Allow
-  #           Principal:
-  #             Service: [codedeploy.amazonaws.com]
-  #           Action: ['sts:AssumeRole']
-  #     ManagedPolicyArns:
-  #       - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
-  #     RoleName: AWSServiceForCodeDeploy2ECS
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [codedeploy.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
+      RoleName: !Sub ${EnvironmentName}-ecs-codedeploy-role
 
-  # CodePipelineServiceRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         - Sid: ''
-  #           Effect: Allow
-  #           Principal:
-  #             Service: [codepipeline.amazonaws.com]
-  #           Action: ['sts:AssumeRole']
-  #     RoleName: !Sub codepipeline-${EnvironmentName}-service-role
-  #     ManagedPolicyArns:
-  #       - !Sub "arn:aws:iam::${AccountId}:policy/AWSCodePipelineServiceRole"
-  #     Policies:
-  #       -
-  #         PolicyName: codepipeline-base-policy
-  #         PolicyDocument:
-  #           Version: '2012-10-17'
-  #           Statement:
-  #             - Sid: CWlogs
-  #               Effect: Allow
-  #               Action:
-  #                 - 'logs:CreateLogGroup'
-  #                 - 'logs:CreateLogStream'
-  #                 - 'logs:PutLogEvents'
-  #               Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
-  #             - Sid: S3Artifacts
-  #               Effect: Allow
-  #               Action:
-  #                 - 's3:PutObject'
-  #                 - 's3:GetObject'
-  #                 - 's3:GetObjectVersion'
-  #                 - 's3:GetBucketAcl'
-  #                 - 's3:GetBucketLocation'
-  #               Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
-  #             - Sid: ECSTasks
-  #               Effect: Allow
-  #               Action:
-  #                 - 'ecs:DescribeServices'
-  #                 - 'ecs:DescribeTaskDefinition'
-  #                 - 'ecs:DescribeTasks'
-  #                 - 'ecs:ListTasks'
-  #                 - 'ecs:RegisterTaskDefinition'
-  #                 - 'ecs:UpdateService'
-  #               Resource: "*"
-  #             - Sid: CodeBuildReports
-  #               Effect: Allow
-  #               Action:
-  #                 - 'codebuild:CreateReportGroup'
-  #                 - 'codebuild:CreateReport'
-  #                 - 'codebuild:UpdateReport'
-  #                 - 'codebuild:BatchPutTestCases'
-  #                 - 'codebuild:BatchPutCodeCoverages'
-  #                 - 'codebuild:StartBuild'
-  #                 - 'codebuild:BatchGetBuilds'
-  #               Resource: !Sub "arn:aws:codebuild:${Region}:${AccountId}:report-group/${EnvironmentName}-*"
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [codepipeline.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      RoleName: !Sub codepipeline-${EnvironmentName}-service-role
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::${AccountId}:policy/AWSCodePipelineServiceRole"
+      Policies:
+        -
+          PolicyName: codepipeline-base-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CWlogs
+                Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
+              - Sid: S3Artifacts
+                Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketLocation'
+                Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
+              - Sid: ECSTasks
+                Effect: Allow
+                Action:
+                  - 'ecs:DescribeServices'
+                  - 'ecs:DescribeTaskDefinition'
+                  - 'ecs:DescribeTasks'
+                  - 'ecs:ListTasks'
+                  - 'ecs:RegisterTaskDefinition'
+                  - 'ecs:UpdateService'
+                Resource: "*"
+              - Sid: CodeBuildReports
+                Effect: Allow
+                Action:
+                  - 'codebuild:CreateReportGroup'
+                  - 'codebuild:CreateReport'
+                  - 'codebuild:UpdateReport'
+                  - 'codebuild:BatchPutTestCases'
+                  - 'codebuild:BatchPutCodeCoverages'
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:BatchGetBuilds'
+                Resource: !Sub "arn:aws:codebuild:${Region}:${AccountId}:report-group/${EnvironmentName}-*"
+              
+  GithubTriggerCodePipeline:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      RoleName: !Sub ${EnvironmentName}-github-trigger-codepipeline
+      Policies:
+        -
+          PolicyName: CP-start-2021-07-29
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ListCodePipelines
+                Effect: Allow
+                Action:
+                  - 'codepipeline:ListPipelines'
+                Resource: "*"
+              - Sid: TriggerCodePipeline
+                Effect: Allow
+                Action:
+                  - 'codepipeline:StartPipelineExecution'
+                Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
+              - Sid: ProvideFeedback
+                Effect: Allow
+                Action:
+                  - 'codepipeline:PutJobSuccessResult'
+                  - 'codepipeline:PutJobFailureResult'
+                Resource: "*"
+
+  # dxhub-github-trigger-codepipeline
 
 Outputs:
   ECSTaskExecutionRoleArn:
@@ -337,16 +376,24 @@ Outputs:
       Name: CodeBuildServiceRoleArn
       # arn:aws:iam::698195851833:role/codebuild-medlmu-service-role
 
-  # CodeDeployServiceRoleArn:
-  #   Description: Export Arn Value for the CodeDeploy Service Role
-  #   Value: !GetAtt CodeDeployServiceRole.Arn
-  #   Export:
-  #     Name: CodeDeployServiceRoleArn
-  #     # arn:aws:iam::698195851833:role/AWSServiceForCodeDeploy2ECS
+  CodeDeployServiceRoleArn:
+    Description: Export Arn Value for the CodeDeploy Service Role
+    Value: !GetAtt CodeDeployServiceRole.Arn
+    Export:
+      Name: CodeDeployServiceRoleArn
+      # arn:aws:iam::698195851833:role/AWSServiceForCodeDeploy2ECS
 
-  # CodePipelineServiceRoleArn:
-  #   Description: Export Arn Value for the CodePipeline Service Role
-  #   Value: !GetAtt CodePipelineServiceRole.Arn
-  #   Export:
-  #     Name: CodePipelineServiceRoleArn
-  #     # arn:aws:iam::698195851833:role/codepipeline-medlmu-service-role
+  CodePipelineServiceRoleArn:
+    Description: Export Arn Value for the CodePipeline Service Role
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: CodePipelineServiceRoleArn
+      # arn:aws:iam::698195851833:role/codepipeline-medlmu-service-role
+
+  GithubTriggerCodePipelineArn:
+    Description: Export Arn Value for the CodePipeline Service Role
+    Value: !GetAtt GithubTriggerCodePipeline.Arn
+    Export:
+      Name: GithubTriggerCodePipelineArn
+      # arn:aws:iam::698195851833:role/-github-trigger-codepipeline
+
