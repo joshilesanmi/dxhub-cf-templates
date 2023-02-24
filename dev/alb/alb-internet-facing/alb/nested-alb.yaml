@@ -16,7 +16,7 @@ Parameters:
   Certificate:
     Description: The Certificate for the listeners
     Type: String
-    # Default: arn:aws:acm:eu-central-1:698195851833:certificate/d53d9a39-ca4d-4078-b548-d1503017374b
+    # Default: arn:aws:acm:eu-west-2:012615398682:certificate/6204290f-17da-411e-b6b6-80ab93aa88e6
 
   Path:
     Type: String
@@ -56,7 +56,7 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 5
       Name: !Sub ${EnvironmentName}-${ServiceName}-1
-      Port: 4000
+      Port: 8081
       Protocol: HTTP
       Tags:
         - Key: Name
@@ -74,7 +74,7 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 5
       Name: !Sub ${EnvironmentName}-${ServiceName}-2
-      Port: 4000
+      Port: 8081
       Protocol: HTTP
       Tags:
         - Key: Name
@@ -264,3 +264,15 @@ Outputs:
     Value: !Ref ServiceTargetGroup2
     Export:
       Name: ServiceTargetGroup2Arn
+
+  ServiceProdListenerArn:
+    Description: The export arn for GraphqlProdListener
+    Value: !Ref ServiceProdListener
+    Export:
+      Name: ServiceProdListenerArn
+
+  ServiceTestListenerArn:
+    Description: The export arn for GraphqlProdListener
+    Value: !Ref ServiceTestListener
+    Export:
+      Name: ServiceTestListenerArn

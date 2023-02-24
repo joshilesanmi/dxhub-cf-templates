@@ -17,7 +17,7 @@ Parameters:
   Certificate:
     Description: The Certificate for the listeners
     Type: String
-    Default: arn:aws:acm:eu-central-1:012615398682:certificate/b697e4c5-8dd6-4d90-b6e4-0e729673584d
+    Default: arn:aws:acm:eu-west-2:012615398682:certificate/6204290f-17da-411e-b6b6-80ab93aa88e6
 
 Resources:
 

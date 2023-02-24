@@ -16,7 +16,7 @@ Parameters:
   CodestarConnection:
     Description: Connection to github organization
     Type: String
-    # Default: arn:aws:codestar-connections:eu-central-1:783446665867:connection/71bfae24-020c-4ff8-ad91-e239453c1c21
+    # Default: arn:aws:codestar-connections:eu-west-1:012615398682:connection/238a2259-f8c8-44d4-bf6b-5383a615cc29
 
   RepositoryName:
     Type: String
@@ -31,13 +31,13 @@ Parameters:
   S3ArtifactBucket:
     Description: CodeBuild Service Role Arn
     Type: String
-    # Default: codepipeline-eu-central-1-403931569879
+    # Default: codepipeline-eu-west-2-0126153986
 
 Resources:
 
   # 1. CodeBuild Projects
 
-  ServiceCodeBuildApplication:
+  NeoCrmApiCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -50,42 +50,38 @@ Resources:
         ImagePullCredentialsType: CODEBUILD
         PrivilegedMode: true
         Type: LINUX_CONTAINER
-        # EnvironmentVariables:
-        #   - Value:
-        #     Type: PLAINTEXT
-        #     Name: CUSTOMER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
       ServiceRole: !ImportValue CodeBuildServiceRoleArn # Required
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
-      Tags:
-        - Key: user:project
-          Value: !Sub ${ServiceName}
-        - Key: user:purpose
-          Value: deployment
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName}
+      #   - Key: user:purpose
+      #     Value: deployment
       TimeoutInMinutes: 60
 
   # 2. CodeDeploy Applications
 
-  GraphqlCodeDeployApplication:
+  NeoCrmApiCodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
       ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
       ComputePlatform: ECS
-      Tags:
-        - Key: user:project
-          Value: !Sub ${ServiceName}
-        - Key: user:purpose
-          Value: deployment
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName}
+      #   - Key: user:purpose
+      #     Value: deployment
 
   # 3. CodeDeploy DeploymentGroups
 
-  GraphqlCodeDeployGroup:
+  NeoCrmApiCodeDeployGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
-      ApplicationName: !Ref GraphqlCodeDeployApplication  # Required
+      ApplicationName: !Ref NeoCrmApiCodeDeployApplication  # Required
       AutoRollbackConfiguration:
         Enabled: true
         Events:
@@ -105,29 +101,29 @@ Resources:
         DeploymentOption: WITH_TRAFFIC_CONTROL
         DeploymentType: BLUE_GREEN
       ECSServices:
-        - ClusterName: !ImportValue ServiceCluster1
+        - ClusterName: !ImportValue ECSCluster
           ServiceName: !ImportValue ECSServiceName
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
               ListenerArns:
-                - !ImportValue GraphqlProdListenerArn
+                - !ImportValue ServiceProdListenerArn
             TestTrafficRoute:
               ListenerArns:
-                - !ImportValue GraphqlTestListenerArn
+                - !ImportValue ServiceTestListenerArn
             TargetGroups:
               - Name: !ImportValue ServiceTargetGroup1Name
               - Name: !ImportValue ServiceTargetGroup2Name
       ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
-      Tags:
-        - Key: user:project
-          Value: !Sub ${ServiceName}
-        - Key: user:purpose
-          Value: deployment
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName1}
+      #   - Key: user:purpose
+      #     Value: deployment
 
   # 4. CodePipeline
 
-  GraphqlCodePipeline:
+  NeoCrmApiCodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -164,32 +160,32 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref ServiceCodeBuildApplication
+                ProjectName: !Ref NeoCrmApiCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildArtifacts
               RunOrder: 1
 
-        # - Name: Deploy
-        #   Actions:
-        #     - Name: Deploy
-        #       ActionTypeId:
-        #         Owner: AWS
-        #         Category: Deploy
-        #         Version: "1"
-        #         Provider: CodeDeployToECS
-        #       Configuration:
-        #         ApplicationName: !Ref GraphqlCodeDeployApplication
-        #         DeploymentGroupName: !Ref GraphqlCodeDeployGroup
-        #         TaskDefinitionTemplateArtifact: BuildArtifacts
-        #         AppSpecTemplateArtifact: BuildArtifacts
-        #         AppSpecTemplatePath: appspec.yaml
-        #         TaskDefinitionTemplatePath: taskdef.json
-        #         Image1ArtifactName: BuildArtifacts
-        #         Image1ContainerName: IMAGE
-        #       InputArtifacts:
-        #         - Name: BuildArtifacts
-        #       RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Owner: AWS
+                Category: Deploy
+                Version: "1"
+                Provider: CodeDeployToECS
+              Configuration:
+                ApplicationName: !Ref NeoCrmApiCodeDeployApplication
+                DeploymentGroupName: !Ref NeoCrmApiCodeDeployGroup
+                TaskDefinitionTemplateArtifact: BuildArtifacts
+                AppSpecTemplateArtifact: BuildArtifacts
+                AppSpecTemplatePath: appspec.yaml
+                TaskDefinitionTemplatePath: taskdef.json
+                Image1ArtifactName: BuildArtifacts
+                Image1ContainerName: IMAGE
+              InputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
 
 # Outputs:

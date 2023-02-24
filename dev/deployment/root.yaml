@@ -17,7 +17,7 @@ Parameters:
   CodestarConnection:
     Description: Connectio to dxhub github
     Type: String
-    Default: arn:aws:codestar-connections:eu-central-1:783446665867:connection/71bfae24-020c-4ff8-ad91-e239453c1c21
+    Default: arn:aws:codestar-connections:eu-west-1:012615398682:connection/238a2259-f8c8-44d4-bf6b-5383a615cc29
 
   RepositoryName:
     Type: String
@@ -32,7 +32,7 @@ Parameters:
   S3ArtifactBucket:
     Description: CodeBuild Service Role Arn
     Type: String
-    Default: codepipeline-eu-central-1-403931569879
+    Default: codepipeline-eu-west-2-0126153986
 
 
 Resources:
@@ -47,4 +47,4 @@ Resources:
         RepositoryName: !Ref RepositoryName
         BranchName: !Ref BranchName
         S3ArtifactBucket: !Ref S3ArtifactBucket
-      TemplateURL: https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/deployment/nested-deployment.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/deployment/nested-deployment.yaml

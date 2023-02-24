@@ -16,18 +16,17 @@ Parameters:
   DynamodbInstance:
       Description: DbHost from Parameter Store for the container
       Type: String
-      Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   HoneyBagerkey:
       Description: DbHost from Parameter Store for the container
       Type: String
-      Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
   JRapi:
       Description: DbHost from Parameter Store for the container
       Type: String
-      Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
-
+      Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
 
 Resources:
 

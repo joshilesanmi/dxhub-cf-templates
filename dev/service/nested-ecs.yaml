@@ -16,17 +16,17 @@ Parameters:
   DynamodbInstance:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   HoneyBagerkey:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
   JRapi:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
 
 Resources:
 
@@ -39,7 +39,7 @@ Resources:
 
   # 2. ECS Clusters
 
-  ECSCluster1:
+  ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       CapacityProviders:
@@ -136,14 +136,14 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 30
-      LogGroupName: !Sub "/aws/ecs/${ECSCluster1}"
+      LogGroupName: !Sub "/aws/ecs/${ECSCluster}"
 
   # 5. Service
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !Ref ECSCluster1
+      Cluster: !Ref ECSCluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -179,11 +179,11 @@ Resources:
 
 Outputs:
 
-  ECSCluster1:
+  ECSCluster:
     Description: The name of the ServiceCluster1
-    Value: !Ref ECSCluster1
+    Value: !Ref ECSCluster
     Export:
-      Name: ServiceCluster1
+      Name: ECSCluster
 
   # ECSCluster2:
   #   Description: The name of the ServiceCluster2
