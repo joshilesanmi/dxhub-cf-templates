@@ -328,7 +328,7 @@ Resources:
             Action: ['sts:AssumeRole']
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-      RoleName: !Sub ${EnvironmentName}-github-trigger-codepipeline
+      RoleName: !Sub ${EnvironmentName}-github-trigger-codepipeline-1
       Policies:
         -
           PolicyName: CP-start-2021-07-29
@@ -395,5 +395,5 @@ Outputs:
     Value: !GetAtt GithubTriggerCodePipeline.Arn
     Export:
       Name: GithubTriggerCodePipelineArn
-      # arn:aws:iam::698195851833:role/-github-trigger-codepipeline
+      # arn:aws:iam::698195851833:role/-github-trigger-codepipeline-1
 
