@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Iam Roles for ECS Service
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    #Default: dxhub
+
+  AccountId:
+    Description: The account id for the client
+    Type: String
+    # Default: '012615398682'
+
+  Region:
+    Description: The AWS region for the client infrastructure
+    Type: String
+    # Default: 'eu-west-2'
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: ecs-services
+
+Resources:
+  ServiceLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "dxhub-github-trigger-codepipeline-cf"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+         - PolicyName: "dxhubCodePipelineAccess"
+           PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: "Allow"
+              Action:
+                - "codepipeline:StartPipelineExecution"
+              Resource:
+                - !Sub "arn:aws:codepipeline:${Region}:${AccountId}:${EnvironmentName}-${ServiceName}"
+
+  ServiceLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "dxhub-github-trigger-codepipeline"
+      PackageType: Image
+      Code:
+        ImageUri: 012615398682.dkr.ecr.eu-west-2.amazonaws.com/dxhub-github-trigger-codepipeline:829b3a55
+      Role: !GetAtt ServiceLambdaExecutionRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          CODEPIPELINE_NAME: !Sub "${EnvironmentName}-${ServiceName}"
+
+Outputs:
+  ClusterLambdaFunction:
+    Description: Export value for the cluster lambda function
+    Value: !GetAtt ServiceLambdaFunction.Arn
+    Export:
+      Name: ClusterLambdaFunctionArn
+

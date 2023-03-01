@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+  AccountId:
+    Description: The account id for the client
+    Type: String
+    Default: '012615398682'
+
+  Region:
+    Description: The AWS region for the client infrastructure
+    Type: String
+    Default: eu-west-2
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    Default: neocrm-api
+
+Resources:
+
+  nestedLambda:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        AccountId: !Ref AccountId
+        Region: !Ref Region
+        ServiceName: !Ref ServiceName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/nested-lambda.yaml
