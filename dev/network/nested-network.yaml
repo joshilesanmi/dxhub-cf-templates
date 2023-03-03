@@ -124,7 +124,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet1aCidrBlock
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-public-eu-central-1a
+          Value: !Sub ${EnvironmentName}-public-1a
 
   PublicSubnet1b:
     Type: AWS::EC2::Subnet
@@ -137,7 +137,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet1bCidrBlock
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-public-eu-central-1b
+          Value: !Sub ${EnvironmentName}-public-1b
 
   PublicSubnet1c:
     Type: AWS::EC2::Subnet
@@ -150,7 +150,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet1cCidrBlock
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-public-eu-central-1c
+          Value: !Sub ${EnvironmentName}-public-1c
 
   # 7. Private Subnets
 
@@ -165,7 +165,7 @@ Resources:
       CidrBlock: !Ref PrivateSubnet1aCidrBlock
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-private-eu-central-1a
+          Value: !Sub ${EnvironmentName}-private-1a
 
   PrivateSubnet1b:
     Type: AWS::EC2::Subnet
@@ -178,7 +178,7 @@ Resources:
       CidrBlock: !Ref PrivateSubnet1bCidrBlock
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-private-eu-central-1b
+          Value: !Sub ${EnvironmentName}-private-1b
 
   PrivateSubnet1c:
     Type: AWS::EC2::Subnet
@@ -191,7 +191,7 @@ Resources:
       CidrBlock: !Ref PrivateSubnet1cCidrBlock
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-private-eu-central-1c
+          Value: !Sub ${EnvironmentName}-private-1c
 
   # 9. EIP
 

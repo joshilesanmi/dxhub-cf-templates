@@ -29,77 +29,75 @@ Resources:
 
   # 1. Target Groups
 
-  # DefaultTargetGroup:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     HealthCheckIntervalSeconds: 6
-  #     HealthCheckPath: /healthcheck
-  #     # HealthCheckPort: "String"
-  #     HealthCheckProtocol: HTTP
-  #     HealthCheckTimeoutSeconds: 5
-  #     HealthyThresholdCount: 2
-  #     Name: !Sub ${EnvironmentName}-DefaultTargetGroup
-  #     Port: 80
-  #     Protocol: HTTP
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub ${EnvironmentName}-DefaultTargetGroup
-  #     UnhealthyThresholdCount: 2
-  #     VpcId: !ImportValue VpcId
+  DefaultALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /healthcheck
+      # HealthCheckPort: "String"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: !Sub ${EnvironmentName}-default-tg
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-DefaultTargetGroup
+      UnhealthyThresholdCount: 2
+      VpcId: !ImportValue VpcId
 
   ServiceTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /status
+      HealthCheckIntervalSeconds: 21
+      HealthCheckPath: /health_check
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
-      Name: !Sub ${EnvironmentName}-${ServiceName}-1
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 4
+      Name: !Sub ${ServiceName}-tg-1
       Port: 8081
       Protocol: HTTP
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName}-1
+          Value: !Sub ${EnvironmentName}-${ServiceName}-tg-1
       TargetType: ip
-      UnhealthyThresholdCount: 2
+      UnhealthyThresholdCount: 4
       VpcId: !ImportValue VpcId
 
   ServiceTargetGroup2:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 20
-      HealthCheckPath: /status
+      HealthCheckIntervalSeconds: 21
+      HealthCheckPath: /health_check
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
-      Name: !Sub ${EnvironmentName}-${ServiceName}-2
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 4
+      Name: !Sub ${ServiceName}-tg-2
       Port: 8081
       Protocol: HTTP
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName}-2
+          Value: !Sub ${EnvironmentName}-${ServiceName}-tg-2
       TargetType: ip
-      UnhealthyThresholdCount: 2
+      UnhealthyThresholdCount: 4
       VpcId: !ImportValue VpcId
 
   # 1. Load Balancers
 
-  # PublicLoadBalancer:
-  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-  #   Properties:
-  #     Name: !Sub ${EnvironmentName}-public-default
-  #     Scheme: internet-facing
-  #     SecurityGroups: [!ImportValue PublicLoadBalancerSG]
-  #     Subnets:
-  #       # The load balancer is placed into the public subnets, so that traffic
-  #       # from the internet can reach the load balancer directly via the internet gateway
-  #       - !ImportValue PublicSubnet1a
-  #       - !ImportValue PublicSubnet1b
-  #       - !ImportValue PublicSubnet1c
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub ${EnvironmentName} PublicLoadBalancer
+  PublicLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}-public-default
+      Scheme: internet-facing
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
+      Subnets:
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} PublicLoadBalancer
 
 # The load balancer name 'dxhub-{ServiceName}' can only contain characters that are alphanumeric characters and hyphens(-)
 
@@ -108,7 +106,7 @@ Resources:
     Properties:
       Name: !Sub ${ServiceName}
       Scheme: internet-facing
-      SecurityGroups: [!ImportValue ServiceSecurityGroup]
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
       Subnets:
         - !ImportValue PublicSubnet1a
         - !ImportValue PublicSubnet1b
@@ -116,20 +114,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb
-
-  # ServiceLoadBalancer:
-  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-  #   Properties:
-  #     Name: !Sub ${ServiceName}
-  #     Scheme: internet-facing
-  #     SecurityGroups: [!ImportValue ServiceSecurityGroup]
-  #     Subnets:
-  #       - !ImportValue PublicSubnet1a
-  #       - !ImportValue PublicSubnet1b
-  #       - !ImportValue PublicSubnet1c
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub ${EnvironmentName}-{ServiceName}-alb
 
 # listeners
 

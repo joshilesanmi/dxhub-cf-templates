@@ -25,30 +25,30 @@ Resources:
   ServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${EnvironmentName} ServiceSecurityGroup
+      GroupName: !Sub ${ServiceName}-sg
       GroupDescription: !Sub Access to the ${ServiceName} containers
       VpcId: !ImportValue VpcId
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName}-sg
+          Value: !Sub ${ServiceName}-sg
 
   ServiceSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from the public ALB
+      Description: Ingress from other containers in the same security group
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: -1
-      SourceSecurityGroupId: !Ref PublicLoadBalancerSG
+      SourceSecurityGroupId: !Ref ServiceSecurityGroup
 
   ServiceCustomPort:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from other containers in the same security group
+      Description: Ingress from the public ALB
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
       FromPort: 8081
       ToPort: 8081
-      SourceSecurityGroupId: !Ref ServiceSecurityGroup
+      SourceSecurityGroupId: !Ref PublicLoadBalancerSG
 
   # Load balancers for getting traffic to containers.
   # This sample template creates one load balancer:
@@ -63,6 +63,7 @@ Resources:
   PublicLoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      GroupName: !Sub ${EnvironmentName}-alb-sg
       GroupDescription: Access to the public facing Load Balancer
       VpcId: !ImportValue VpcId
       SecurityGroupIngress:
@@ -92,7 +93,7 @@ Resources:
           CidrIpv6: ::/0
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-PublicLoadBalancer-SG
+          Value: !Sub ${EnvironmentName}-alb-sg
 
 
 Outputs:

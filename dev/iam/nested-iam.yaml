@@ -6,22 +6,12 @@ Parameters:
   EnvironmentName:
     Description: The Stack Name for naming the resources
     Type: String
-    Default: dxhub
-
-  AccountId:
-    Description: The account id for the client
-    Type: String
-    # Default: '783446665867'
-
-  Region:
-    Description: The AWS region for the client infrastructure
-    Type: String
-    Default: 'eu-west-2'
+    # Default: dxhub
 
   ServiceName:
     Description: The name of first service
     Type: String
-    # Default: ecs-services
+    # Default: neocrm-api
 
 
 Resources:
@@ -77,20 +67,20 @@ Resources:
                   - 'ssm:Describe*'
                   - 'ssm:Get*'
                   - 'ssm:List*'
-                Resource: !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/${EnvironmentName}/*"
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}/*"
               # Allow the executioner to use a kms key
               - Sid: KmsUse
                 Effect: Allow
                 Action:
                   - kms:Decrypt
                   - kms:DescribeKey
-                Resource: !Sub "arn:aws:kms:${Region}:${AccountId}:alias/aws/ssm"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm"
               # Allow the executioner to use keys from the SecretsManager
               - Sid: SecretsManagerRead
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Sub "arn:aws:secretsmanager:${Region}:${AccountId}:secret:${EnvironmentName}/*"
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${EnvironmentName}/*"
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-service-task-execution
@@ -122,7 +112,48 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:/aws/ecs/${EnvironmentName}*"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:/aws/ecs/${EnvironmentName}*"
+        -
+          PolicyName: dxhub-use-shared-key
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseKMSKey
+                Effect: "Allow"
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                  - kms:DescribeKey
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/dxhub-shared"
+        -
+          PolicyName: KMS-use-jr-configuration-key
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseSSMKey
+                Effect: "Allow"
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                  - kms:DescribeKey
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/jr-configuration-key"
+        -
+          PolicyName: read-jr-instance-configuration
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseSSMKey
+                Effect: "Allow"
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:GetItem
+                  - dynamodb:ListTables
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/jr-instance-configuration"
         -
           PolicyName: ssm-channel-handling
           PolicyDocument:
@@ -160,9 +191,9 @@ Resources:
               Service: [codebuild.amazonaws.com]
             Action: ['sts:AssumeRole']
         Version: "2012-10-17"
-      RoleName: !Sub codebuild-${EnvironmentName}-service-role
+      RoleName: !Sub codebuild-${EnvironmentName}-${ServiceName}-service-role
       # ManagedPolicyArns:
-      #   - !Sub "arn:aws:iam::${AccountId}:policy/AWSCodePipelineServiceRole"
+      #   - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
       Path: /
       Policies:
         -
@@ -176,7 +207,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:/aws/codebuild/${EnvironmentName}-*"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${EnvironmentName}-*"
               - Sid: S3WriteCodePipelineArtifacts
                 Effect: Allow
                 Action:
@@ -185,7 +216,7 @@ Resources:
                   - 's3:GetObjectVersion'
                   - 's3:GetBucketAcl'
                   - 's3:GetBucketLocation'
-                Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
+                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
               - Sid: CodeBuildReports
                 Effect: Allow
                 Action:
@@ -196,15 +227,28 @@ Resources:
                   - 'codebuild:BatchPutCodeCoverages'
                   - 'codebuild:StartBuild'
                   - 'codebuild:BatchGetBuilds'
-                Resource: !Sub "arn:aws:codebuild:${Region}:${AccountId}:report-group/${EnvironmentName}-*"
+                Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${EnvironmentName}-*"
               - Sid: SecretsManagerGet
                 Effect: Allow
                 Action:
                   - 'secretsmanager:DescribeSecret'
                   - 'secretsmanager:GetSecretValue'
-                Resource: !Sub "arn:aws:secretsmanager:${Region}:${AccountId}:secret:${EnvironmentName}/*"
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${EnvironmentName}/*"
         -
-          PolicyName: ecr-build-image
+          PolicyName: cloudfront-update-invalidate
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CloudFrontOperations
+                Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                  - cloudfront:GetDistribution
+                  - cloudfront:GetInvalidation
+                  - cloudfront:UpdateDistribution
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/*"
+        -
+          PolicyName: ecr-readwrite-dxhub-neocrm-api
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -216,31 +260,64 @@ Resources:
               - Sid: EcrPush
                 Effect: Allow
                 Action:
-                  - 'ecr:BatchCheckLayerAvailability'
-                  - 'ecr:GetDownloadUrlForLayer'
-                  - 'ecr:BatchGetImage'
-                  - 'ecr:PutImage'
-                  - 'ecr:InitiateLayerUpload'
-                  - 'ecr:UploadLayerPart'
-                  - 'ecr:CompleteLayerUpload'
-                Resource: !Sub "arn:aws:ecr:${Region}:${AccountId}:repository/${EnvironmentName}-*"
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${EnvironmentName}-*"
         -
-          PolicyName: ssm-get-parameters
+          PolicyName: kms-decrypt-ssm-read
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
+              - Sid:  UseSSMkey
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: 
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/ssm"
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/dxhub-neocrm-api"
               - Sid:  SsmList
                 Effect: Allow
                 Action:
-                  - 'ssm:DescribeParameters'
+                  - ssm:DescribeParameters
                 Resource: '*'
               - Sid: SsmRead
                 Effect: Allow
                 Action:
                   - 'ssm:GetParameters'
                 Resource:
-                  - !Sub "arn:aws:ssm:e${Region}:${AccountId}:parameter/codebuild*/*"
-                  - !Sub "arn:aws:ssm:${Region}:${AccountId}:parameter/${EnvironmentName}*/*"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/codebuild*/*"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}-${ServiceName}/*"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}*/*"
+        -
+          PolicyName: s3-readwrite-bucket-dxhub-neocrm-api-doc
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid:  ObjectOperations
+                Effect: Allow
+                Action:
+                  - s3:AbortMultipartUpload
+                  - s3:DeleteObject
+                  - s3:DeleteObjectVersion
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListMultipartUploadParts
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${EnvironmentName}-${ServiceName}-doc/*"
+              - Sid:  BucketOperations
+                Effect: Allow
+                Action:
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetLifecycleConfiguration
+                  - s3:PutLifecycleConfiguration
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${EnvironmentName}-${ServiceName}-doc"
 
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
@@ -257,6 +334,82 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
       RoleName: !Sub ${EnvironmentName}-ecs-codedeploy-role
 
+  CodeDeployLifeCycleRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      RoleName: codedeploy-lifecycle-role
+      Policies:
+        -
+          PolicyName: KMS-decrypt-SSM-read-ssm
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseSSMkey
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: 
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/ssm"
+              - Sid: SsmRead
+                Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                Resource: 
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
+        # -
+        #   PolicyName: codedeploy-lifecyclehooks
+        #   PolicyDocument:
+        #     Version: "2012-10-17"
+        #     Statement:
+        #       - Sid: Lifecycle
+        #         Effect: Allow
+        #         Action:
+        #           - codedeploy:Get*
+        #           - codedeploy:PutLifecycleEventHookExecutionStatus
+        #           - ecs:DescribeTaskDefinition
+        #         Resource: "*"
+        #       - Sid: Lifecycle2
+        #         Effect: Allow
+        #         Action:
+        #           - ecs:DescribeServices
+        #         Resource: 
+        #           - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/*/*"
+        #           # - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/*/*"
+        #       - Sid: Lifecycle3
+        #         Effect: Allow
+        #         Action:
+        #           - ecs:RunTask
+        #         Resource: 
+        #           - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
+        #           # - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
+        #       - Sid: Lifecycle4
+        #         Effect: Allow
+        #         Action:
+        #           - ecs:DescribeTasks
+        #         Resource: 
+        #           - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/*/*"
+        #           # - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
+        #       - Sid: IAMPassRole
+        #         Effect: Allow
+        #         Action:
+        #           - iam:PassRole
+        #         Resource: 
+        #           - !Sub "arn:aws:iam:${AWS::AccountId}:role/dxhub-*"
+        #           - !Sub "arn:aws:iam:${AWS::AccountId}:role/iam-*"
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-service-task-execution
+
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -270,7 +423,7 @@ Resources:
             Action: ['sts:AssumeRole']
       RoleName: !Sub codepipeline-${EnvironmentName}-service-role
       ManagedPolicyArns:
-        - !Sub "arn:aws:iam::${AccountId}:policy/AWSCodePipelineServiceRole"
+        - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
       Policies:
         -
           PolicyName: codepipeline-base-policy
@@ -283,7 +436,7 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
               - Sid: S3Artifacts
                 Effect: Allow
                 Action:
@@ -292,7 +445,7 @@ Resources:
                   - 's3:GetObjectVersion'
                   - 's3:GetBucketAcl'
                   - 's3:GetBucketLocation'
-                Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
+                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
               - Sid: ECSTasks
                 Effect: Allow
                 Action:
@@ -313,7 +466,7 @@ Resources:
                   - 'codebuild:BatchPutCodeCoverages'
                   - 'codebuild:StartBuild'
                   - 'codebuild:BatchGetBuilds'
-                Resource: !Sub "arn:aws:codebuild:${Region}:${AccountId}:report-group/${EnvironmentName}-*"
+                Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${EnvironmentName}-*"
               
   GithubTriggerCodePipeline:
     Type: AWS::IAM::Role
@@ -344,7 +497,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - 'codepipeline:StartPipelineExecution'
-                Resource: !Sub "arn:aws:s3:::codepipeline-${Region}-*"
+                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
               - Sid: ProvideFeedback
                 Effect: Allow
                 Action:
@@ -360,21 +513,21 @@ Outputs:
     Value: !GetAtt ECSTaskExecutionRole.Arn
     Export:
       Name: ECSTaskExecutionRoleArn
-      # arn:aws:iam::698195851833:role/medlmu-service-task-execution-role
+      # arn:aws:iam::698195851833:role/dxhub-service-task-execution-role
 
   ECSTaskRoleArn:
     Description: Export Value for the ECSTaskRole
     Value: !GetAtt ECSTaskRole.Arn
     Export:
       Name: ECSTaskRoleArn
-      # arn:aws:iam::698195851833:role/medlmu-dreamin-ecs-task-role
+      # arn:aws:iam::698195851833:role/dxhub-neocrm-api-ecs-task-role
 
   CodeBuildServiceRoleArn:
     Description: Export Arn Value for the CodeBuild Service Role
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
       Name: CodeBuildServiceRoleArn
-      # arn:aws:iam::698195851833:role/codebuild-medlmu-service-role
+      # arn:aws:iam::698195851833:role/codebuild-neocrm-api-service-role
 
   CodeDeployServiceRoleArn:
     Description: Export Arn Value for the CodeDeploy Service Role
@@ -388,7 +541,7 @@ Outputs:
     Value: !GetAtt CodePipelineServiceRole.Arn
     Export:
       Name: CodePipelineServiceRoleArn
-      # arn:aws:iam::698195851833:role/codepipeline-medlmu-service-role
+      # arn:aws:iam::698195851833:role/codepipeline-neocrm-api-service-role
 
   GithubTriggerCodePipelineArn:
     Description: Export Arn Value for the CodePipeline Service Role
