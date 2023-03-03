@@ -5,28 +5,18 @@ Parameters:
   EnvironmentName:
     Description: The Stack Name for naming the resources
     Type: String
-    #Default: dxhub
-
-  AccountId:
-    Description: The account id for the client
-    Type: String
-    # Default: '012615398682'
-
-  Region:
-    Description: The AWS region for the client infrastructure
-    Type: String
-    # Default: 'eu-west-2'
+    # Default: dxhub
 
   GithubTiggerFunctionName:
     Description: The name lambda function for github tigger
     Type: String
-    # Default: 'dxhub-github-trigger-codepipeline'
+    # Default: github-trigger-codepipeline
 
   CodedeployFunctionName:
     Description: The name of first service code deploy lifecycle
     Type: String
-    # Default: 'dxhub-codedeploy-lifecycle'
-
+    # Default: codedeploy-lifecycle
+    
 Resources:
 
 # 1. ECR Repositories
@@ -46,10 +36,10 @@ Resources:
   GithubTiggerLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub ${GithubTiggerECRRepository}
+      FunctionName: !Sub ${EnvironmentName}-${GithubTiggerFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerECRRepository}
+        ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerECRRepository}
       Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256
@@ -57,10 +47,10 @@ Resources:
   CodeDeployLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub ${CodedeployFunctionName}
+      FunctionName: !Sub ${EnvironmentName}-${CodedeployFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}
+        ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}
       Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256

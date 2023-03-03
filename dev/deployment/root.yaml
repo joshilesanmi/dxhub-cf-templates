@@ -15,7 +15,7 @@ Parameters:
     Default: neocrm-api
 
   CodestarConnection:
-    Description: Connectio to dxhub github
+    Description: Connection to dxhub github
     Type: String
     Default: arn:aws:codestar-connections:eu-west-1:012615398682:connection/238a2259-f8c8-44d4-bf6b-5383a615cc29
 

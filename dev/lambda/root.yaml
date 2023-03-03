@@ -7,25 +7,15 @@ Parameters:
     Type: String
     Default: dxhub
 
-  AccountId:
-    Description: The account id for the client
-    Type: String
-    Default: '012615398682'
-
-  Region:
-    Description: The AWS region for the client infrastructure
-    Type: String
-    Default: eu-west-2
-
   GithubTiggerFunctionName:
     Description: The name lambda function for
     Type: String
-    Default: 'github-trigger-codepipeline'
+    Default: github-trigger-codepipeline
 
   CodedeployFunctionName:
     Description: The name of first service
     Type: String
-    Default: 'codedeploy-lifecycle'
+    Default: codedeploy-lifecycle
 
 Resources:
 
@@ -34,8 +24,6 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-        AccountId: !Ref AccountId
-        Region: !Ref Region
         GithubTiggerFunctionName: !Ref GithubTiggerFunctionName
         CodedeployFunctionName: !Ref CodedeployFunctionName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/nested-lambda.yaml
