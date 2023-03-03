@@ -6,7 +6,7 @@ Parameters:
   EnvironmentName:
     Description: The Stack Name for naming the resources
     Type: String
-    Default: dxhub
+    # Default: dxhub
 
   AccountId:
     Description: The account id for the client
@@ -16,7 +16,7 @@ Parameters:
   Region:
     Description: The AWS region for the client infrastructure
     Type: String
-    Default: 'eu-west-2'
+    # Default: eu-west-2
 
   ServiceName:
     Description: The name of first service

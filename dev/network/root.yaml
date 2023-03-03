@@ -5,11 +5,12 @@ Parameters:
   EnvironmentName:
     Description: The Stack Name for naming the resources
     Type: String
-    Default: 'dxhub'
+    Default: dxhub
 
   ServiceName:
     Description: The Service name
     Type: String
+    Default: neocrm-api
 
 Resources:
 
