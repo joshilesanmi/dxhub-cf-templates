@@ -8,20 +8,10 @@ Parameters:
     Type: String
     #Default: dxhub
 
-  AccountId:
-    Description: The account id for the client
-    Type: String
-    # Default: '012615398682'
-
-  Region:
-    Description: The AWS region for the client infrastructure
-    Type: String
-    # Default: 'eu-west-2'
-
   ServiceName:
     Description: The name of first service
     Type: String
-    # Default: ecs-services
+    # Default: github-trigger-codepipeline
 
 Resources:
   ServiceLambdaExecutionRole:
@@ -47,7 +37,7 @@ Resources:
               Action:
                 - "codepipeline:StartPipelineExecution"
               Resource:
-                - !Sub "arn:aws:codepipeline:${Region}:${AccountId}:${EnvironmentName}-${ServiceName}"
+                - !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}-${ServiceName}"
 
   ServiceLambdaFunction:
     Type: AWS::Lambda::Function
@@ -55,8 +45,9 @@ Resources:
       FunctionName: "dxhub-github-trigger-codepipeline"
       PackageType: Image
       Code:
-        ImageUri: 012615398682.dkr.ecr.eu-west-2.amazonaws.com/dxhub-github-trigger-codepipeline:829b3a55
-      Role: !GetAtt ServiceLambdaExecutionRole.Arn
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
+          # 012615398682.dkr.ecr.eu-west-2.amazonaws.com/dxhub-github-trigger-codepipeline:829b3a55
+      Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256
       Environment:
