@@ -346,7 +346,7 @@ Resources:
         Version: "2012-10-17"
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
-      RoleName: codedeploy-lifecycle-role
+      RoleName: !Sub ${EnvironmentName}-codedeploy-lifecycle-role
       Policies:
         -
           PolicyName: KMS-decrypt-SSM-read-ssm
@@ -544,9 +544,15 @@ Outputs:
       # arn:aws:iam::698195851833:role/codepipeline-neocrm-api-service-role
 
   GithubTriggerCodePipelineArn:
-    Description: Export Arn Value for the CodePipeline Service Role
+    Description: Export Arn Value for the GithubTriggerCodePipeline
     Value: !GetAtt GithubTriggerCodePipeline.Arn
     Export:
       Name: GithubTriggerCodePipelineArn
-      # arn:aws:iam::698195851833:role/-github-trigger-codepipeline-1
+      # arn:aws:iam::698195851833:role/dxhub-github-trigger-codepipeline-1
 
+  CodeDeployLifeCycleRoleArn:
+    Description: Export Arn Value for the Code Deploy LifeCycle Role
+    Value: !GetAtt CodeDeployLifeCycleRole.Arn
+    Export:
+      Name: CodeDeployLifeCycleRoleArn
+      # arn:aws:iam::698195851833:role/dxhub-codedeploy-lifecycle-role

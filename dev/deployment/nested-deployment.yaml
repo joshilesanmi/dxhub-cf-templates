@@ -133,7 +133,7 @@ Resources:
       RestartExecutionOnUpdate: false
       RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
       Stages: # Required
-        - Name: ImageSource
+        - Name: Source
           Actions:
             - Name: Source
               Namespace: SourceVariables

@@ -17,6 +17,46 @@ Parameters:
     Type: String
     Default: codedeploy-lifecycle
 
+  GithubSecret:
+    Description: The github secret
+    Type: String
+    Default: 3mU!uE@*Z2Ky!R_TTYkNYm.ksAB3CZoz-@2CqJ_TsrpofXjzmqCTZ2RU2hqzPXft
+
+  LambdaAccountID:
+    Description: The lambda account id
+    Type: String
+    Default: d6e625fc5b199b3c10212f517a631172
+
+  IAMClientID:
+    Description: The IAM client id
+    Type: String
+    Default: 2ef16eecd60f498590eaf8b05023015b
+    
+  IAMClientSecret:
+    Description: The IAM client secret
+    Type: String
+    Default: zsYLTMbPDaNuPBZQKV85wXx+QlaEqeiJrfz1mIwst7c3T5K7XBwNK9cR+BsbaNiV
+
+  InstanceID:
+    Description: The Instance ID
+    Type: String
+    Default: 7706b2eedf6b30a5c4555a03260824a3
+
+  NeoletterFormID:
+    Description: The neoletter form id
+    Type: String
+    Default: f0bf83125e774a55aebe38553eea9b22 
+
+  NeoletterMailRecepient:
+    Description: The neoletter mail recepient 
+    Type: String
+    Default: jan.fienhold@justrelate.com
+
+  SenderEmail:
+    Description: The neoletter sender email
+    Type: String
+    Default: neoletter@justrelate.com
+
 Resources:
 
   nestedLambda:
@@ -26,4 +66,12 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         GithubTiggerFunctionName: !Ref GithubTiggerFunctionName
         CodedeployFunctionName: !Ref CodedeployFunctionName
+        GithubSecret: !Ref GithubSecret
+        LambdaAccountID: !Ref LambdaAccountID
+        IAMClientID: !Ref IAMClientID
+        IAMClientSecret: !Ref IAMClientSecret
+        InstanceID: !Ref InstanceID
+        NeoletterFormID: !Ref NeoletterFormID
+        NeoletterMailRecepient: !Ref NeoletterMailRecepient
+        SenderEmail: !Ref SenderEmail
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/nested-lambda.yaml

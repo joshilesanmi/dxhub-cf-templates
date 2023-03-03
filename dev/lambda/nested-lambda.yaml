@@ -16,6 +16,46 @@ Parameters:
     Description: The name of first service code deploy lifecycle
     Type: String
     # Default: codedeploy-lifecycle
+
+  GithubSecret:
+    Description: The github secret
+    Type: String
+    # Default: 3mU!uE@*Z2Ky!R_TTYkNYm.ksAB3CZoz-@2CqJ_TsrpofXjzmqCTZ2RU2hqzPXft
+
+  LambdaAccountID:
+    Description: The lambda account id
+    Type: String
+    # Default: d6e625fc5b199b3c10212f517a631172
+
+  IAMClientID:
+    Description: The IAM client id
+    Type: String
+    # Default: 2ef16eecd60f498590eaf8b05023015b
+    
+  IAMClientSecret:
+    Description: The IAM client secret
+    Type: String
+    # Default: zsYLTMbPDaNuPBZQKV85wXx+QlaEqeiJrfz1mIwst7c3T5K7XBwNK9cR+BsbaNiV
+
+  InstanceID:
+    Description: The Instance ID
+    Type: String
+    # Default: 7706b2eedf6b30a5c4555a03260824a3
+
+  NeoletterFormID:
+    Description: The neoletter form id
+    Type: String
+    # Default: f0bf83125e774a55aebe38553eea9b22 
+
+  NeoletterMailRecepient:
+    Description: The neoletter mail recepient 
+    Type: String
+    # Default: jan.fienhold@justrelate.com 
+
+  SenderEmail:
+    Description: The neoletter sender email
+    Type: String
+    # Default: neoletter@justrelate.com
     
 Resources:
 
@@ -33,38 +73,50 @@ Resources:
 
 # 2. Lambda Functions
 
-  GithubTiggerLambdaFunction:
+  GithubTigger:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub ${EnvironmentName}-${GithubTiggerFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerECRRepository}
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerFunctionName}:b07cd347"
       Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256
+      Environment:
+        Variables:
+          GITHUB_SECRET: !Ref GithubSecret
 
-  CodeDeployLambdaFunction:
+  CodeDeployLifeCycle:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub ${EnvironmentName}-${CodedeployFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}
-      Role: !ImportValue GithubTriggerCodePipelineArn
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}:b07cd347"
+      Role: !ImportValue CodeDeployLifeCycleRoleArn
       Timeout: 30
       MemorySize: 256
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref LambdaAccountID
+          IAM_CLIENT_ID: !Ref IAMClientID
+          IAM_CLIENT_SECRET: !Ref IAMClientSecret
+          INSTANCE_ID: !Ref InstanceID
+          NEOLETTER_FORM_ID: !Ref NeoletterFormID
+          NEOLETTER_MAIL_RECIPIENT: !Ref NeoletterMailRecepient
+          SENDER_EMAIL: !Ref SenderEmail
 
 Outputs:
-  GithubTiggerFunction:
+  GithubTiggerArn:
     Description: Export value for the cluster lambda function for github trigger
-    Value: !GetAtt GithubTiggerLambdaFunction.Arn
+    Value: !GetAtt GithubTigger.Arn
     Export:
-      Name: GithubTiggerLambdaFunctionArn
+      Name: GithubTiggerArn
 
-  CodeDeployLambdaFunction:
+  CodeDeployLifeCycleArn:
     Description: Export value for the cluster lambda function for codelifecycle
-    Value: !GetAtt CodeDeployLambdaFunction.Arn
+    Value: !GetAtt CodeDeployLifeCycle.Arn
     Export:
-      Name: CodeDeployLambdaFunctionArn
+      Name: CodeDeployLifeCycleArn
 
