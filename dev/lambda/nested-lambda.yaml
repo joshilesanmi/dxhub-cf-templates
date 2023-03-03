@@ -49,7 +49,7 @@ Resources:
       FunctionName: !Sub ${GithubTiggerECRRepository}
       PackageType: Image
       Code:
-        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${GithubTiggerECRRepository}
+        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerECRRepository}
       Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256
@@ -60,7 +60,7 @@ Resources:
       FunctionName: !Sub ${CodedeployFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${CodedeployFunctionName}
+        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}
       Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256

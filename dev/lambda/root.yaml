@@ -20,12 +20,12 @@ Parameters:
   GithubTiggerFunctionName:
     Description: The name lambda function for
     Type: String
-    Default: 'dxhub-github-trigger-codepipeline'
+    Default: 'github-trigger-codepipeline'
 
   CodedeployFunctionName:
     Description: The name of first service
     Type: String
-    Default: 'dxhub-codedeploy-lifecycle'
+    Default: 'codedeploy-lifecycle'
 
 Resources:
 
