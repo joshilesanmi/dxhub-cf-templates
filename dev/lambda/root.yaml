@@ -7,10 +7,15 @@ Parameters:
     Type: String
     Default: dxhub
 
-  ServiceName:
-    Description: The name of first service
+  GithubTiggerFunctionName:
+    Description: The name lambda function for
     Type: String
     Default: github-trigger-codepipeline
+
+  CodedeployFunctionName:
+    Description: The name of first service
+    Type: String
+    Default: codedeploy-lifecycle
 
 Resources:
 
@@ -19,5 +24,6 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-        ServiceName: !Ref ServiceName
+        GithubTiggerFunctionName: !Ref GithubTiggerFunctionName
+        CodedeployFunctionName: !Ref CodedeployFunctionName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/nested-lambda.yaml
