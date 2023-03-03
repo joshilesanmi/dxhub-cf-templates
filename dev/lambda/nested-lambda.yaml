@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Iam Roles for ECS Service
 
 Parameters:
 
@@ -18,55 +17,64 @@ Parameters:
     Type: String
     # Default: 'eu-west-2'
 
-  ServiceName:
-    Description: The name of first service
+  GithubTiggerFunctionName:
+    Description: The name lambda function for github tigger
     Type: String
-    # Default: ecs-services
+    # Default: 'dxhub-github-trigger-codepipeline'
+
+  CodedeployFunctionName:
+    Description: The name of first service code deploy lifecycle
+    Type: String
+    # Default: 'dxhub-codedeploy-lifecycle'
 
 Resources:
-  ServiceLambdaExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: "dxhub-github-trigger-codepipeline-cf"
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service: "lambda.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-      Policies:
-         - PolicyName: "dxhubCodePipelineAccess"
-           PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-            - Effect: "Allow"
-              Action:
-                - "codepipeline:StartPipelineExecution"
-              Resource:
-                - !Sub "arn:aws:codepipeline:${Region}:${AccountId}:${EnvironmentName}-${ServiceName}"
 
-  ServiceLambdaFunction:
+# 1. ECR Repositories
+
+  GithubTiggerECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${GithubTiggerFunctionName}
+
+  CodeDeployECRRepository2:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${CodedeployFunctionName}
+
+# 2. Lambda Functions
+
+  GithubTiggerLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: "dxhub-github-trigger-codepipeline"
+      FunctionName: !Sub ${GithubTiggerECRRepository}
       PackageType: Image
       Code:
-        ImageUri: 012615398682.dkr.ecr.eu-west-2.amazonaws.com/dxhub-github-trigger-codepipeline:829b3a55
-      Role: !GetAtt ServiceLambdaExecutionRole.Arn
+        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${GithubTiggerECRRepository}
+      Role: !ImportValue GithubTriggerCodePipelineArn
       Timeout: 30
       MemorySize: 256
-      Environment:
-        Variables:
-          CODEPIPELINE_NAME: !Sub "${EnvironmentName}-${ServiceName}"
+
+  CodeDeployLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${CodedeployFunctionName}
+      PackageType: Image
+      Code:
+        ImageUri: !Sub  ${AccountId}.dkr.ecr.${Region}.amazonaws.com/${CodedeployFunctionName}
+      Role: !ImportValue GithubTriggerCodePipelineArn
+      Timeout: 30
+      MemorySize: 256
 
 Outputs:
-  ClusterLambdaFunction:
-    Description: Export value for the cluster lambda function
-    Value: !GetAtt ServiceLambdaFunction.Arn
+  GithubTiggerFunction:
+    Description: Export value for the cluster lambda function for github trigger
+    Value: !GetAtt GithubTiggerLambdaFunction.Arn
     Export:
-      Name: ClusterLambdaFunctionArn
+      Name: GithubTiggerLambdaFunctionArn
+
+  CodeDeployLambdaFunction:
+    Description: Export value for the cluster lambda function for codelifecycle
+    Value: !GetAtt CodeDeployLambdaFunction.Arn
+    Export:
+      Name: CodeDeployLambdaFunctionArn
 

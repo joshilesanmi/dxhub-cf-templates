@@ -17,10 +17,15 @@ Parameters:
     Type: String
     Default: eu-west-2
 
-  ServiceName:
+  GithubTiggerFunctionName:
+    Description: The name lambda function for
+    Type: String
+    Default: 'dxhub-github-trigger-codepipeline'
+
+  CodedeployFunctionName:
     Description: The name of first service
     Type: String
-    Default: neocrm-api
+    Default: 'dxhub-codedeploy-lifecycle'
 
 Resources:
 
@@ -31,5 +36,6 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         AccountId: !Ref AccountId
         Region: !Ref Region
-        ServiceName: !Ref ServiceName
+        GithubTiggerFunctionName: !Ref GithubTiggerFunctionName
+        CodedeployFunctionName: !Ref CodedeployFunctionName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/nested-lambda.yaml
