@@ -106,6 +106,13 @@ Resources:
           NEOLETTER_FORM_ID: !Ref NeoletterFormID
           NEOLETTER_MAIL_RECIPIENT: !Ref NeoletterMailRecepient
           SENDER_EMAIL: !Ref SenderEmail
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue CodeDeployLifeCyleSG
+        SubnetIds:
+          - !ImportValue PrivateSubnet1a
+          - !ImportValue PrivateSubnet1b
+          - !ImportValue PrivateSubnet1c
 
 Outputs:
   GithubTiggerArn:

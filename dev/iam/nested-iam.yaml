@@ -366,46 +366,33 @@ Resources:
                   - ssm:GetParameters
                 Resource: 
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
-        # -
-        #   PolicyName: codedeploy-lifecyclehooks
-        #   PolicyDocument:
-        #     Version: "2012-10-17"
-        #     Statement:
-        #       - Sid: Lifecycle
-        #         Effect: Allow
-        #         Action:
-        #           - codedeploy:Get*
-        #           - codedeploy:PutLifecycleEventHookExecutionStatus
-        #           - ecs:DescribeTaskDefinition
-        #         Resource: "*"
-        #       - Sid: Lifecycle2
-        #         Effect: Allow
-        #         Action:
-        #           - ecs:DescribeServices
-        #         Resource: 
-        #           - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/*/*"
-        #           # - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/*/*"
-        #       - Sid: Lifecycle3
-        #         Effect: Allow
-        #         Action:
-        #           - ecs:RunTask
-        #         Resource: 
-        #           - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
-        #           # - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
-        #       - Sid: Lifecycle4
-        #         Effect: Allow
-        #         Action:
-        #           - ecs:DescribeTasks
-        #         Resource: 
-        #           - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/*/*"
-        #           # - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
-        #       - Sid: IAMPassRole
-        #         Effect: Allow
-        #         Action:
-        #           - iam:PassRole
-        #         Resource: 
-        #           - !Sub "arn:aws:iam:${AWS::AccountId}:role/dxhub-*"
-        #           - !Sub "arn:aws:iam:${AWS::AccountId}:role/iam-*"
+        - 
+          PolicyName: cd-lifecyclehook-2021-08-11
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Sid: Lifecycle
+                Effect: Allow 
+                Action: 
+                  - 'codedeploy:Get*'
+                  - 'codedeploy:PutLifecycleEventHookExecutionStatus'
+                  - 'ecs:DescribeTaskDefinition'
+                Resource: "*"
+              - Sid: Lifecycle2
+                Effect: Allow 
+                Action: 
+                  - 'ecs:DescribeServices'
+                Resource: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${EnvironmentName}/*"
+              - Sid: Lifecycle3
+                Effect: Allow 
+                Action: 
+                  - 'ecs:RunTask'
+                Resource: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${EnvironmentName}-*:*"
+              - Sid: IAMPassRole
+                Effect: Allow 
+                Action: 
+                  - 'iam:PassRole'
+                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/${EnvironmentName}-*"
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-service-task-execution
@@ -497,15 +484,15 @@ Resources:
                 Effect: Allow
                 Action:
                   - 'codepipeline:StartPipelineExecution'
-                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}-*"
+                # !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
+                # "arn:aws:codepipeline:eu-central-1:115379056088:dxhub-*"
               - Sid: ProvideFeedback
                 Effect: Allow
                 Action:
                   - 'codepipeline:PutJobSuccessResult'
                   - 'codepipeline:PutJobFailureResult'
                 Resource: "*"
-
-  # dxhub-github-trigger-codepipeline
 
 Outputs:
   ECSTaskExecutionRoleArn:
