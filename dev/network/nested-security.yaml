@@ -7,10 +7,17 @@ Parameters:
   EnvironmentName:
     Description: An Environment Name to name the resources
     Type: String
+    # Default: dxhub
 
   ServiceName:
     Description: The Service name
     Type: String
+    # Default: neocrm-api
+
+  CodeDeploy:
+    Description: The Service name
+    Type: String
+    # Default: codedeploy-lifecycle
 
 Resources:
 
@@ -25,12 +32,12 @@ Resources:
   ServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${ServiceName}-sg
+      GroupName: !Sub ${EnvironmentName}-${ServiceName}-sg
       GroupDescription: !Sub Access to the ${ServiceName} containers
       VpcId: !ImportValue VpcId
       Tags:
         - Key: Name
-          Value: !Sub ${ServiceName}-sg
+          Value: !Sub ${EnvironmentName}-${ServiceName}-sg
 
   ServiceSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
@@ -40,7 +47,17 @@ Resources:
       IpProtocol: -1
       SourceSecurityGroupId: !Ref ServiceSecurityGroup
 
-  ServiceCustomPort:
+  ServiceIngressRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the public ALB
+      GroupId: !Ref ServiceSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8081
+      ToPort: 8081
+      SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
+
+  ServiceIngressRule2:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from the public ALB
@@ -49,6 +66,44 @@ Resources:
       FromPort: 8081
       ToPort: 8081
       SourceSecurityGroupId: !Ref PublicLoadBalancerSG
+
+  CodeDeployLifeCyleSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-${CodeDeploy}-sg
+      GroupDescription: !Sub Access to the ${CodeDeploy} containers
+      VpcId: !ImportValue VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${CodeDeploy}-sg
+
+  CodeDeployIngressRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the internal ALB
+      GroupId: !Ref CodeDeployLifeCyleSG
+      IpProtocol: tcp
+      FromPort: 8443
+      ToPort: 8443
+      SourceSecurityGroupId: !Ref InternalAlbSG
+
+  VPCEndpointSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-vpce-sg
+      GroupDescription: Access to vpc endpoints
+      VpcId: !ImportValue VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-vpce-sg
+
+  VPCEndpointSGIngressFromPublicALB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
 
   # Load balancers for getting traffic to containers.
   # This sample template creates one load balancer:
@@ -95,17 +150,64 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb-sg
 
+  InternalAlbSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-alb-internal-sg
+      GroupDescription: !Sub ${EnvironmentName} Internal Alb Sg
+      VpcId: !ImportValue VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-alb-internal-sg
+
+  InternalAlbIngressRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the CodeDeployLifecycleSg
+      GroupId: !Ref InternalAlbSG
+      IpProtocol: tcp
+      FromPort: 8443
+      ToPort: 8443
+      SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
+
+  InternalAlbIngressRule2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the CodeDeployLifecycleSg
+      GroupId: !Ref InternalAlbSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
 
 Outputs:
 
   ServiceSecurityGroup:
-    Description: A security group used to allow Fargate containers to receive traffic
+    Description: A security group for Service
     Value: !Ref ServiceSecurityGroup
     Export:
       Name: ServiceSecurityGroup
 
+  CodeDeployLifeCyleSG:
+    Description: A security group for CodeDeployLifeCyle
+    Value: !Ref CodeDeployLifeCyleSG
+    Export:
+      Name: CodeDeployLifeCyleSG
+
   PublicLoadBalancerSG:
-    Description: A security group used to allow Fargate containers to receive traffic
+    Description: A security group for PublicLoadBalancer
     Value: !Ref PublicLoadBalancerSG
     Export:
       Name: PublicLoadBalancerSG
+
+  InternalAlbSG:
+    Description: A security group for InternalAlb
+    Value: !Ref InternalAlbSG
+    Export:
+      Name: InternalAlbSG
+
+  VPCEndpointSG:
+    Description: A security group for VPCEndpointSG
+    Value: !Ref VPCEndpointSG
+    Export:
+      Name: VPCEndpointSG

@@ -64,7 +64,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}
+          Value: !Sub ${EnvironmentName}-igw
 
   PublicGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -80,7 +80,7 @@ Resources:
       VpcId: !Ref Vpc
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-public-route-table
+          Value: !Sub ${EnvironmentName}-public-rt
 
   # 4. Public Route
 
@@ -195,27 +195,27 @@ Resources:
 
   # 9. EIP
 
-  # NatGateway1Attachment:
-  #   Type: AWS::EC2::EIP
-  #   DependsOn:
-  #     - PublicGatewayAttachment
-  #   Properties:
-  #     Domain: vpc
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub ${EnvironmentName}-NatGateway-1
+  NatGateway1Attachment:
+    Type: AWS::EC2::EIP
+    DependsOn:
+      - PublicGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-NatGateway-1
 
-  # # 10. NatGateway
+  # 10. NatGateway
 
-  # NatGateway1:
-  #   Type: AWS::EC2::NatGateway
-  #   Properties:
-  #     AllocationId: !GetAtt NatGateway1Attachment.AllocationId
-  #     ConnectivityType: public
-  #     SubnetId: !Ref PublicSubnet1a # Required
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub ${EnvironmentName}-NatGateway-1
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1Attachment.AllocationId
+      ConnectivityType: public
+      SubnetId: !Ref PublicSubnet1a # Required
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-nat-1
 
   # 11. Private Route Table
 
@@ -225,7 +225,7 @@ Resources:
       VpcId: !Ref Vpc
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-private-route-table-1
+          Value: !Sub ${EnvironmentName}-private-rt
 
 
   # 12. Private Routes
@@ -235,7 +235,7 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref igw
+      NatGatewayId: !Ref NatGateway1
 
 
   # 13. Private Subnet Associations
@@ -257,7 +257,6 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       SubnetId: !Ref PrivateSubnet1c
-
 
 Outputs:
 

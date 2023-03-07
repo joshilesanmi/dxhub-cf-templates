@@ -12,6 +12,11 @@ Parameters:
     Type: String
     Default: neocrm-api
 
+  CodeDeploy:
+    Description: The Service name
+    Type: String
+    Default: codedeploy-lifecycle
+
 Resources:
 
   nestedNetwork:
@@ -20,6 +25,7 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-network.yaml
+  
   nestedSecurity:
     Type: AWS::CloudFormation::Stack
     DependsOn:
@@ -28,4 +34,13 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
+        CodeDeploy: !Ref CodeDeploy
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-security.yaml
+
+  nestedEndpoints:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - nestedNetwork
+      - nestedSecurity
+    Properties:
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-endpoints.yaml

@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  The Network Stack template that deploys the network infrastructure.
+
+# Parameters:
+
+#   EnvironmentName:
+#     Description: An Environment Name to name the resources
+#     Type: String
+#     # Default: dxhub
+
+Resources:
+
+  # 1. Endpoints
+
+  ECSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      # PolicyDocument: JSON
+      PrivateDnsEnabled: true
+      # RouteTableIds:
+      #   RouteTableIds
+      SecurityGroupIds:
+        - !ImportValue VPCEndpointSG
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecs" # Required
+      SubnetIds:
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
+      VpcEndpointType: Interface
+      VpcId: !ImportValue VpcId # Required
+
+  CodeDeployEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      # PolicyDocument: JSON
+      PrivateDnsEnabled: true
+      # RouteTableIds:
+      #   RouteTableIds
+      SecurityGroupIds:
+        - !ImportValue VPCEndpointSG
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.codedeploy" # Required
+      SubnetIds:
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
+      VpcEndpointType: Interface
+      VpcId: !ImportValue VpcId # Required 
+      # Tags:
+      #   - Key: Name
+      #     Value: dxhub-codedeploy
+
+Outputs:
+
+  ECSEndpointId:
+    Description: An Id for ECSEndpoint
+    Value: !Ref ECSEndpoint
+    Export:
+      Name: ECSEndpointId
+
+  CodeDeployEndpointId:
+    Description: An Id for CodeDeployEndpoint
+    Value: !Ref CodeDeployEndpoint
+    Export:
+      Name: CodeDeployEndpointId 
