@@ -202,41 +202,41 @@ Resources:
                 - Name: BuildArtifacts
               RunOrder: 1
 
-        # - Name: Deploy
-        #   Actions:
-        #     - Name: Deploy
-        #       ActionTypeId:
-        #         Owner: AWS
-        #         Category: Deploy
-        #         Version: "1"
-        #         Provider: CodeDeployToECS
-        #       Configuration:
-        #         ApplicationName: !Ref NeoCrmApiCodeDeployApplication
-        #         DeploymentGroupName: !Ref NeoCrmApiCodeDeployGroup
-        #         TaskDefinitionTemplateArtifact: BuildArtifacts
-        #         AppSpecTemplateArtifact: BuildArtifacts
-        #         AppSpecTemplatePath: appspec.yaml
-        #         TaskDefinitionTemplatePath: taskdef.json
-        #         Image1ArtifactName: BuildArtifacts
-        #         Image1ContainerName: IMAGE
-        #       InputArtifacts:
-        #         - Name: BuildArtifacts
-        #       RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Owner: AWS
+                Category: Deploy
+                Version: "1"
+                Provider: CodeDeployToECS
+              Configuration:
+                ApplicationName: !Ref NeoCrmApiCodeDeployApplication
+                DeploymentGroupName: !Ref NeoCrmApiCodeDeployGroup
+                TaskDefinitionTemplateArtifact: BuildArtifacts
+                AppSpecTemplateArtifact: BuildArtifacts
+                AppSpecTemplatePath: appspec.yaml
+                TaskDefinitionTemplatePath: taskdef.json
+                Image1ArtifactName: BuildArtifacts
+                Image1ContainerName: IMAGE
+              InputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
 
-        # - Name: Notify
-        #   Actions:
-        #     - Name: Notify
-        #       ActionTypeId:
-        #         Owner: AWS
-        #         Category: Build
-        #         Version: "1"
-        #         Provider: CodeBuild
-        #       Configuration:
-        #         ProjectName: !Ref NeoCrmApiNotifyCodeBuild
-        #       InputArtifacts:
-        #         - Name: SourceArtifact
-        #       # OutputArtifacts:
-        #       #   - Name: BuildArtifacts
-        #       RunOrder: 1
+        - Name: Notify
+          Actions:
+            - Name: Notify
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref NeoCrmApiNotifyCodeBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              # OutputArtifacts:
+              #   - Name: BuildArtifacts
+              RunOrder: 1
 
 # Outputs:
