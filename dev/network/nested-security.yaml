@@ -37,7 +37,7 @@ Resources:
       VpcId: !ImportValue VpcId
       Tags:
         - Key: Name
-          Value: !Sub ${ServiceName}-sg
+          Value: !Sub ${EnvironmentName}-${ServiceName}-sg
 
   ServiceSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
@@ -86,6 +86,24 @@ Resources:
       FromPort: 8443
       ToPort: 8443
       SourceSecurityGroupId: !Ref InternalAlbSG
+
+  VPCEndpointSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-vpce-sg
+      GroupDescription: Access to vpc endpoints
+      VpcId: !ImportValue VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-vpce-sg
+
+  VPCEndpointSGIngressFromPublicALB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
 
   # Load balancers for getting traffic to containers.
   # This sample template creates one load balancer:
@@ -187,3 +205,9 @@ Outputs:
     Value: !Ref InternalAlbSG
     Export:
       Name: InternalAlbSG
+
+  VPCEndpointSG:
+    Description: A security group for VPCEndpointSG
+    Value: !Ref VPCEndpointSG
+    Export:
+      Name: VPCEndpointSG

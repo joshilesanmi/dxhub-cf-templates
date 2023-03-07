@@ -36,3 +36,11 @@ Resources:
         ServiceName: !Ref ServiceName
         CodeDeploy: !Ref CodeDeploy
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-security.yaml
+
+  nestedEndpoints:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - nestedNetwork
+      - nestedSecurity
+    Properties:
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-endpoints.yaml
