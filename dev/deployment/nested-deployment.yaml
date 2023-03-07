@@ -43,7 +43,7 @@ Resources:
       Artifacts:
         Type: CODEPIPELINE
       BadgeEnabled: false
-      Description: !Sub "Build image for ${EnvironmentName} {ServiceName}"
+      Description: !Sub "Build image for ${EnvironmentName}-${ServiceName}"
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
@@ -61,6 +61,38 @@ Resources:
       #     Value: !Sub ${ServiceName}
       #   - Key: user:purpose
       #     Value: deployment
+      TimeoutInMinutes: 60
+  
+  NeoCrmApiNotifyCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+        Name: notify
+      BadgeEnabled: false
+      Description: !Sub "Build image for ${EnvironmentName}-${ServiceName}-notify"
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      Cache:
+        Type: S3
+        Location: codepipeline-eu-west-2-0126153986/cache-deploy
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Sub "${EnvironmentName}-${ServiceName}-notify"
+      Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
+      QueuedTimeoutInMinutes: 480
+      ServiceRole: !ImportValue CodeBuildServiceRoleArn
+      Source:
+        BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
+        Type: CODEPIPELINE
+        InsecureSsl: false
+      # Tags:
+      #   Tags
       TimeoutInMinutes: 60
 
   # 2. CodeDeploy Applications
@@ -187,4 +219,21 @@ Resources:
         #       InputArtifacts:
         #         - Name: BuildArtifacts
         #       RunOrder: 1
+
+        - Name: Notify
+          Actions:
+            - Name: Notify
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref NeoCrmApiNotifyCodeBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              # OutputArtifacts:
+              #   - Name: BuildArtifacts
+              RunOrder: 1
+
 # Outputs:
