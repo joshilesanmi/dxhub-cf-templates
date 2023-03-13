@@ -30,6 +30,10 @@ Parameters:
 
 Resources:
 
+#####
+  # Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb, 
+#####
+
   # 1. ECR Repositories
 
   ECRRepository:
@@ -58,7 +62,6 @@ Resources:
         - Name: !Ref ServiceName
           Memory: 128
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
-          # 012615398682.dkr.ecr.eu-west-2.amazonaws.com/dxhub-neocrm-api:latest
           PortMappings:
             - ContainerPort: 8081
               Protocol: tcp
@@ -180,17 +183,15 @@ Resources:
 
 Outputs:
 
+#####
+  # Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
+
   ECSCluster:
     Description: The name of the ServiceCluster1
     Value: !Ref ECSCluster
     Export:
       Name: ECSCluster
-
-  # ECSCluster2:
-  #   Description: The name of the ServiceCluster2
-  #   Value: !Ref ECSCluster2
-  #   Export:
-  #     Name: ServiceCluster2
 
   ECSServiceName:
     Description: Export for the ECSService

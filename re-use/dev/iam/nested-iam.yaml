@@ -12,8 +12,7 @@ Parameters:
     Description: The name of first service
     Type: String
     # Default: neocrm-api
-
-
+    
 Resources:
 
   # This is an IAM role which authorizes ECS to manage resources on your
@@ -180,7 +179,6 @@ Resources:
                   - cloudwatch:PutMetricData
                 Resource: '*'
 
-
   CodeBuildServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -207,7 +205,9 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${EnvironmentName}-*"
+                Resource: 
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${EnvironmentName}-*"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${EnvironmentName}-${ServiceName}-*:log-stream:*"
               - Sid: S3WriteCodePipelineArtifacts
                 Effect: Allow
                 Action:
@@ -334,69 +334,6 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
       RoleName: !Sub ${EnvironmentName}-ecs-codedeploy-role
 
-  CodeDeployLifeCycleRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
-      RoleName: !Sub ${EnvironmentName}-codedeploy-lifecycle-role
-      Policies:
-        -
-          PolicyName: KMS-decrypt-SSM-read-ssm
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: UseSSMkey
-                Effect: Allow
-                Action:
-                  - kms:Decrypt
-                  - kms:DescribeKey
-                Resource: 
-                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/ssm"
-              - Sid: SsmRead
-                Effect: Allow
-                Action:
-                  - ssm:GetParameters
-                Resource: 
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
-        - 
-          PolicyName: cd-lifecyclehook-2021-08-11
-          PolicyDocument: 
-            Version: "2012-10-17"
-            Statement:
-              - Sid: Lifecycle
-                Effect: Allow 
-                Action: 
-                  - 'codedeploy:Get*'
-                  - 'codedeploy:PutLifecycleEventHookExecutionStatus'
-                  - 'ecs:DescribeTaskDefinition'
-                Resource: "*"
-              - Sid: Lifecycle2
-                Effect: Allow 
-                Action: 
-                  - 'ecs:DescribeServices'
-                Resource: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${EnvironmentName}/*"
-              - Sid: Lifecycle3
-                Effect: Allow 
-                Action: 
-                  - 'ecs:RunTask'
-                Resource: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${EnvironmentName}-*:*"
-              - Sid: IAMPassRole
-                Effect: Allow 
-                Action: 
-                  - 'iam:PassRole'
-                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/${EnvironmentName}-*"
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-service-task-execution
-
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -454,47 +391,13 @@ Resources:
                   - 'codebuild:StartBuild'
                   - 'codebuild:BatchGetBuilds'
                 Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${EnvironmentName}-*"
-              
-  GithubTriggerCodePipeline:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: ''
-            Effect: Allow
-            Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-      RoleName: !Sub ${EnvironmentName}-github-trigger-codepipeline-1
-      Policies:
-        -
-          PolicyName: CP-start-2021-07-29
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: ListCodePipelines
-                Effect: Allow
-                Action:
-                  - 'codepipeline:ListPipelines'
-                Resource: "*"
-              - Sid: TriggerCodePipeline
-                Effect: Allow
-                Action:
-                  - 'codepipeline:StartPipelineExecution'
-                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}-*"
-                # !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
-                # "arn:aws:codepipeline:eu-central-1:115379056088:dxhub-*"
-              - Sid: ProvideFeedback
-                Effect: Allow
-                Action:
-                  - 'codepipeline:PutJobSuccessResult'
-                  - 'codepipeline:PutJobFailureResult'
-                Resource: "*"
 
 Outputs:
+
+#####
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates
+#####
+
   ECSTaskExecutionRoleArn:
     Description: Export value for the ECSTaskExecutionRole
     Value: !GetAtt ECSTaskExecutionRole.Arn
@@ -529,17 +432,3 @@ Outputs:
     Export:
       Name: CodePipelineServiceRoleArn
       # arn:aws:iam::698195851833:role/codepipeline-neocrm-api-service-role
-
-  GithubTriggerCodePipelineArn:
-    Description: Export Arn Value for the GithubTriggerCodePipeline
-    Value: !GetAtt GithubTriggerCodePipeline.Arn
-    Export:
-      Name: GithubTriggerCodePipelineArn
-      # arn:aws:iam::698195851833:role/dxhub-github-trigger-codepipeline-1
-
-  CodeDeployLifeCycleRoleArn:
-    Description: Export Arn Value for the Code Deploy LifeCycle Role
-    Value: !GetAtt CodeDeployLifeCycleRole.Arn
-    Export:
-      Name: CodeDeployLifeCycleRoleArn
-      # arn:aws:iam::698195851833:role/dxhub-codedeploy-lifecycle-role

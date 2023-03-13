@@ -35,6 +35,11 @@ Parameters:
 
 Resources:
 
+#####
+  # Modify the LogicalID (i.e. NeoCrmApiCodeBuild ) to a desired name and add the suffix with the expected value type (i.e. CodeBuild,CodeDeployApplication) 
+  #
+#####
+
   # 1. CodeBuild Projects
 
   NeoCrmApiCodeBuild:
@@ -62,6 +67,8 @@ Resources:
       #   - Key: user:purpose
       #     Value: deployment
       TimeoutInMinutes: 60
+
+  # Use this notify Build if you need it otherwise comment it out 
   
   NeoCrmApiNotifyCodeBuild:
     Type: AWS::CodeBuild::Project
@@ -80,10 +87,6 @@ Resources:
       Cache:
         Type: S3
         Location: codepipeline-eu-west-2-0126153986/cache-deploy
-      LogsConfig:
-        CloudWatchLogs:
-          Status: ENABLED
-          GroupName: !Sub "${EnvironmentName}-${ServiceName}-notify"
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
       ServiceRole: !ImportValue CodeBuildServiceRoleArn
@@ -222,6 +225,8 @@ Resources:
               InputArtifacts:
                 - Name: BuildArtifacts
               RunOrder: 1
+
+  # Use this last stage if your service pipeline has the notify build project
 
         - Name: Notify
           Actions:
