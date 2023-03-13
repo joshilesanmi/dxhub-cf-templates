@@ -39,5 +39,5 @@ Resources:
         DynamodbInstance: !Ref DynamodbInstance
         HoneyBagerkey: !Ref HoneyBagerkey
         JRapi: !Ref JRapi
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/service/nested-ecs.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/ecs-service/nested-ecs.yaml
 

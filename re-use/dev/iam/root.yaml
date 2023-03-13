@@ -1,0 +1,25 @@
+# S3 URL for root - https://trox-backend-cf.s3.eu-central-1.amazonaws.com/Test/iam/root.yaml
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    Default: neocrm-api
+
+Resources:
+
+  nestedIam:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName: !Ref ServiceName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/nested-iam.yaml

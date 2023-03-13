@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A template for the ALB
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Environment Name to name the resources
+    Type: String
+    # Default: dxhub
+
+Resources:
+
+  # 1. Target Groups
+
+  DefaultALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /healthcheck
+      # HealthCheckPort: "String"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: !Sub ${EnvironmentName}-default
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: user:environment
+          Value: development
+        - Key: user:product
+          Value: !Sub ${EnvironmentName}-default
+      UnhealthyThresholdCount: 2
+      VpcId: !ImportValue VpcId
+
+  # 1. Load Balancers
+
+  PublicLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}
+      Scheme: internet-facing
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
+      Subnets:
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
+      Tags:
+        - Key: user:environment
+          Value: development
+        - Key: user:product
+          Value: !Sub ${EnvironmentName}-alb
+
+Outputs:
+
+  ExternalUrl:
+    Description: The url of the external load balancer
+    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
+    Export:
+      Name: ExternalUrl
+
+  PublicLoadBalancerArn:
+    Description: The export arn for the Public LoadBalancer
+    Value: !Ref PublicLoadBalancer
+    Export:
+      Name: PublicLoadBalancerArn
+
+  DefaultALBTargetGroupName:
+    Description: The export name for DefaultALBTargetGroup
+    Value: !GetAtt DefaultALBTargetGroup.TargetGroupName
+    Export:
+      Name: DefaultALBTargetGroupName

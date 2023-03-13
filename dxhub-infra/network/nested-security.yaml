@@ -50,7 +50,7 @@ Resources:
   ServiceIngressRule1:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from the public ALB
+      Description: Ingress from the CodeDeployLifeCyleSG
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
       FromPort: 8081
@@ -60,7 +60,7 @@ Resources:
   ServiceIngressRule2:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from the public ALB
+      Description: Ingress from the PublicLoadBalancerSG
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
       FromPort: 8081
@@ -100,7 +100,7 @@ Resources:
   VPCEndpointSGIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from the
+      Description: Ingress from the CodeDeployLifeCyleSG
       GroupId: !Ref VPCEndpointSG
       IpProtocol: -1
       SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
