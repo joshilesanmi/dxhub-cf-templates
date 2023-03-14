@@ -87,6 +87,16 @@ Resources:
       ToPort: 8443
       SourceSecurityGroupId: !Ref InternalAlbSG
 
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-rds-sg
+      GroupDescription: Access to the rds
+      VpcId: !ImportValue VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-rds-sg
+
   VPCEndpointSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -207,7 +217,13 @@ Outputs:
       Name: InternalAlbSG
 
   VPCEndpointSG:
-    Description: A security group for VPCEndpointSG
+    Description: A security group for VPCEndpoint
     Value: !Ref VPCEndpointSG
     Export:
       Name: VPCEndpointSG
+
+  RDSSecurityGroup:
+    Description: A security group for RDS
+    Value: !Ref RDSSecurityGroup
+    Export:
+      Name: RDSSecurityGroup

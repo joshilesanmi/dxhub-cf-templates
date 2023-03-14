@@ -2,12 +2,12 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >
   The Network Stack template that deploys the network infrastructure.
 
-# Parameters:
+Parameters:
 
-#   EnvironmentName:
-#     Description: An Environment Name to name the resources
-#     Type: String
-#     # Default: dxhub
+  EnvironmentName:
+    Description: An Environment Name to name the resources
+    Type: String
+    # Default: dxhub
 
 Resources:
 
@@ -50,6 +50,26 @@ Resources:
       #   - Key: Name
       #     Value: dxhub-codedeploy
 
+  RDSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      # PolicyDocument: JSON
+      PrivateDnsEnabled: true
+      # RouteTableIds:
+      #   RouteTableIds
+      SecurityGroupIds:
+        - !ImportValue RDSSecurityGroup
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.rds" # Required
+      SubnetIds:
+        - !ImportValue RDSSubnet1a
+        - !ImportValue RDSSubnet1b
+        - !ImportValue RDSSubnet1c
+      VpcEndpointType: Interface
+      VpcId: !ImportValue VpcId # Required 
+      # Tags:
+      #   - Key: Name
+      #     Value: !Sub ${EnvironmentName}-rds
+
 Outputs:
 
   ECSEndpointId:
@@ -63,3 +83,9 @@ Outputs:
     Value: !Ref CodeDeployEndpoint
     Export:
       Name: CodeDeployEndpointId 
+
+  RDSEndpointId:
+    Description: An Id for RDSEndpoint
+    Value: !Ref RDSEndpoint
+    Export:
+      Name: RDSEndpointId 

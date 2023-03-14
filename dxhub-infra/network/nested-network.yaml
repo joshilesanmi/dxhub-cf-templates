@@ -7,41 +7,57 @@ Parameters:
   EnvironmentName:
     Description: An Environment Name to name the resources
     Type: String
+    # Default: dxhub
 
   VpcCidrBlock:
     Description: Public Subnet 1a Cidr Block
     Type: String
-    Default: 10.192.0.0/16
+    # Default: 10.192.0.0/16
 
   PublicSubnet1aCidrBlock:
     Description: Public Subnet 1a Cidr Block
     Type: String
-    Default: 10.192.10.0/24
+    # Default: 10.192.10.0/24
 
   PublicSubnet1bCidrBlock:
     Description: Public Subnet 1b Cidr Block
     Type: String
-    Default: 10.192.20.0/24
+    # Default: 10.192.20.0/24
 
   PublicSubnet1cCidrBlock:
     Description: Public Subnet 1c Cidr Block
     Type: String
-    Default: 10.192.30.0/24
+    # Default: 10.192.30.0/24
 
   PrivateSubnet1aCidrBlock:
     Description: Private Subnet 1a Cidr Block
     Type: String
-    Default: 10.192.110.0/24
+    # Default: 10.192.110.0/24
 
   PrivateSubnet1bCidrBlock:
     Description: Private Subnet 1b Cidr Block
     Type: String
-    Default: 10.192.120.0/24
+    # Default: 10.192.120.0/24
 
   PrivateSubnet1cCidrBlock:
     Description: Private Subnet 1c Cidr Block
     Type: String
-    Default: 10.192.130.0/24
+    # Default: 10.192.130.0/24
+
+  RDSSubnet1aCidrBlock:
+    Description: RDS Subnet 1a Cidr Block
+    Type: String
+    # Default: 10.192.210.0/24
+
+  RDSSubnet1bCidrBlock:
+    Description: RDS Subnet 1b Cidr Block
+    Type: String
+    # Default: 10.192.220.0/24
+
+  RDSSubnet1cCidrBlock:
+    Description: RDS Subnet 1c Cidr Block
+    Type: String
+    # Default: 10.192.230.0/24
 
 Resources:
 
@@ -111,6 +127,24 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1c
 
+  RDSSubnet1aAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref RDSSubnet1a
+
+  RDSSubnet1bAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref RDSSubnet1b
+
+  RDSSubnet1cAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref RDSSubnet1c
+
   # 6. Public Subnets
 
   PublicSubnet1a:
@@ -152,7 +186,48 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-public-1c
 
-  # 7. Private Subnets
+  # 7. RDS Subnet
+
+  RDSSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: true 
+      AvailabilityZone: !Select 
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref RDSSubnet1aCidrBlock
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-rds-1a
+
+  RDSSubnet1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: true 
+      AvailabilityZone: !Select 
+        - 1
+        - Fn::GetAZs: !Ref AWS::Region
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref RDSSubnet1bCidrBlock
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-rds-1b
+
+  RDSSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: true 
+      AvailabilityZone: !Select 
+        - 2
+        - Fn::GetAZs: !Ref AWS::Region
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref RDSSubnet1cCidrBlock
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-rds-1c
+
+  # 8. Private Subnets
 
   PrivateSubnet1a:
     Type: AWS::EC2::Subnet
@@ -300,3 +375,18 @@ Outputs:
     Value: !Ref PrivateRouteTable1
     Export:
       Name: PrivateRouteTable1
+  RDSSubnet1a:
+    Description: RDS subnet 1a
+    Value: !Ref RDSSubnet1a
+    Export:
+      Name: RDSSubnet1a
+  RDSSubnet1b:
+    Description: RDS subnet 1b
+    Value: !Ref RDSSubnet1b
+    Export:
+      Name: RDSSubnet1b
+  RDSSubnet1c:
+    Description: RDS subnet 1c
+    Value: !Ref RDSSubnet1c
+    Export:
+      Name: RDSSubnet1c

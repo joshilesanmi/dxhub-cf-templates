@@ -17,6 +17,56 @@ Parameters:
     Type: String
     Default: codedeploy-lifecycle
 
+  VpcCidrBlock:
+    Description: Public Subnet 1a Cidr Block
+    Type: String
+    Default: 10.192.0.0/16
+
+  PublicSubnet1aCidrBlock:
+    Description: Public Subnet 1a Cidr Block
+    Type: String
+    Default: 10.192.10.0/24
+
+  PublicSubnet1bCidrBlock:
+    Description: Public Subnet 1b Cidr Block
+    Type: String
+    Default: 10.192.20.0/24
+
+  PublicSubnet1cCidrBlock:
+    Description: Public Subnet 1c Cidr Block
+    Type: String
+    Default: 10.192.30.0/24
+
+  PrivateSubnet1aCidrBlock:
+    Description: Private Subnet 1a Cidr Block
+    Type: String
+    Default: 10.192.110.0/24
+
+  PrivateSubnet1bCidrBlock:
+    Description: Private Subnet 1b Cidr Block
+    Type: String
+    Default: 10.192.120.0/24
+
+  PrivateSubnet1cCidrBlock:
+    Description: Private Subnet 1c Cidr Block
+    Type: String
+    Default: 10.192.130.0/24
+
+  RDSSubnet1aCidrBlock:
+    Description: RDS Subnet 1a Cidr Block
+    Type: String
+    Default: 10.192.210.0/24
+
+  RDSSubnet1bCidrBlock:
+    Description: RDS Subnet 1b Cidr Block
+    Type: String
+    Default: 10.192.220.0/24
+
+  RDSSubnet1cCidrBlock:
+    Description: RDS Subnet 1c Cidr Block
+    Type: String
+    Default: 10.192.230.0/24
+
 Resources:
 
   nestedNetwork:
@@ -24,7 +74,17 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-network.yaml
+        VpcCidrBlock: !Ref VpcCidrBlock
+        PublicSubnet1aCidrBlock: !Ref PublicSubnet1aCidrBlock
+        PublicSubnet1bCidrBlock: !Ref PublicSubnet1bCidrBlock
+        PublicSubnet1cCidrBlock: !Ref PublicSubnet1cCidrBlock
+        PrivateSubnet1aCidrBlock: !Ref PrivateSubnet1aCidrBlock
+        PrivateSubnet1bCidrBlock: !Ref PrivateSubnet1bCidrBlock
+        PrivateSubnet1cCidrBlock: !Ref PrivateSubnet1cCidrBlock
+        RDSSubnet1aCidrBlock: !Ref RDSSubnet1aCidrBlock
+        RDSSubnet1bCidrBlock: !Ref RDSSubnet1bCidrBlock
+        RDSSubnet1cCidrBlock: !Ref RDSSubnet1cCidrBlock
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/dxhub/nested-network.yaml
   
   nestedSecurity:
     Type: AWS::CloudFormation::Stack
@@ -35,7 +95,7 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
         CodeDeploy: !Ref CodeDeploy
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-security.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/dxhub/nested-security.yaml
 
   nestedEndpoints:
     Type: AWS::CloudFormation::Stack
@@ -43,4 +103,6 @@ Resources:
       - nestedNetwork
       - nestedSecurity
     Properties:
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-endpoints.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/dxhub/nested-endpoints.yaml
