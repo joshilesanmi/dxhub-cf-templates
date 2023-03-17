@@ -1,4 +1,4 @@
-# A GUIDE TO DEPLOYING ECS SERVICES
+# A Guide to deploying ECS Services on ip-saas-dev
 
      Important note:
         
