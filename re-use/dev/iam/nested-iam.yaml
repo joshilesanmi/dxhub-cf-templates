@@ -332,7 +332,7 @@ Resources:
             Action: ['sts:AssumeRole']
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
-      RoleName: !Sub ${EnvironmentName}-ecs-codedeploy-role
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-codedeploy-role
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -345,7 +345,7 @@ Resources:
             Principal:
               Service: [codepipeline.amazonaws.com]
             Action: ['sts:AssumeRole']
-      RoleName: !Sub codepipeline-${EnvironmentName}-service-role
+      RoleName: !Sub codepipeline-${EnvironmentName}-${ServiceName}-service-role
       ManagedPolicyArns:
         - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
       Policies:

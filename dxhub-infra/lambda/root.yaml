@@ -74,4 +74,4 @@ Resources:
         NeoletterFormID: !Ref NeoletterFormID
         NeoletterMailRecepient: !Ref NeoletterMailRecepient
         SenderEmail: !Ref SenderEmail
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/nested-lambda.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/lambda/lambda.yaml

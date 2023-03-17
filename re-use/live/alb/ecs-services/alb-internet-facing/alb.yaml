@@ -6,23 +6,44 @@ Parameters:
   EnvironmentName:
     Description: The Environment Name to name the resources
     Type: String
-    Default: dxhub
+    # Default: dxhub
 
   ServiceName:
     Description: The Service Name
     Type: String
+    # Default: neocrm-api
 
   Certificate:
     Description: The Certificate for the listeners
     Type: String
-    # Default: arn:aws:acm:eu-central-1:698195851833:certificate/d53d9a39-ca4d-4078-b548-d1503017374b
+    # Default: arn:aws:acm:eu-west-2:012615398682:certificate/6204290f-17da-411e-b6b6-80ab93aa88e6
+
+  VpcId:
+    Description: Dxhub VpcId
+    Type: String
+    # Default: vpc-090e086f59b874011
+
+  PublicSubnet1a:
+    Description: Dxhub PublicSubnet1a
+    Type: String
+    # Default: subnet-04ef6dbeac6590347
+
+  PublicSubnet1b:
+    Description: Dxhub PublicSubnet1b
+    Type: String
+    # Default: subnet-0d6515159c1192fc0
+
+  PublicSubnet1c:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    # Default: subnet-098a6dc7ffbd55c5e
 
   Path:
     Type: String
-    Default: "*"
     Description: A path on the public load balancer that this service
                  should be connected to. Use * to send all load balancer
                  traffic to this service.
+    Default: "*"
 
 Resources:
 
@@ -31,56 +52,64 @@ Resources:
   ServiceTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /status
+      HealthCheckIntervalSeconds: 21
+      HealthCheckPath: /health_check
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 4
       Name: !Sub ${EnvironmentName}-${ServiceName}-1
-      Port: 4000
+      Port: 8081
       Protocol: HTTP
       Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName}-1
+       - Key: user:environment
+         Value: development
+       - Key: user:product
+         Value: !Sub ${EnvironmentName}-${ServiceName}-1
       TargetType: ip
-      UnhealthyThresholdCount: 2
-      VpcId: !ImportValue VpcId
+      UnhealthyThresholdCount: 4
+      VpcId: !Ref VpcId
 
   ServiceTargetGroup2:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 20
-      HealthCheckPath: /status
+      HealthCheckIntervalSeconds: 21
+      HealthCheckPath: /health_check
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 4
       Name: !Sub ${EnvironmentName}-${ServiceName}-2
-      Port: 4000
+      Port: 8081
       Protocol: HTTP
       Tags:
-        - Key: Name
+        - Key: user:environment
+          Value: development
+        - Key: user:product
           Value: !Sub ${EnvironmentName}-${ServiceName}-2
       TargetType: ip
-      UnhealthyThresholdCount: 2
-      VpcId: !ImportValue VpcId
+      UnhealthyThresholdCount: 4
+      VpcId: !Ref VpcId
 
   # 1. Load Balancers
 
-  ServiceLoadBalancer:
+  # The load balancer name 'dxhub-{ServiceName}' can only contain characters that are alphanumeric characters and hyphens(-)
+
+  ServiceALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${EnvironmentName}-{ServiceName}
+      Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internet-facing
-      SecurityGroups: [!ImportValue ServiceSecurityGroup]
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
       Subnets:
-        - !ImportValue PublicSubnet1a
-        - !ImportValue PublicSubnet1b
-        - !ImportValue PublicSubnet1c
+        - !Ref PublicSubnet1a
+        - !Ref PublicSubnet1b
+        - !Ref PublicSubnet1c
       Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName} {ServiceName} ServiceLoadBalancer
+        - Key: user:environment
+          Value: development
+        - Key: user:product
+          Value: !Sub ${EnvironmentName}-${ServiceName}-alb
 
-# listeners
+  # listeners
 
   Service80Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -94,7 +123,7 @@ Resources:
             Protocol: HTTPS
             Query: "#{query}"
             StatusCode: HTTP_301
-      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceALB # Required
       Port: 80
       Protocol: HTTP
 
@@ -106,7 +135,7 @@ Resources:
       DefaultActions: # Required
         - TargetGroupArn: !Ref ServiceTargetGroup1
           Type: forward
-      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceALB # Required
       Port: 443
       Protocol: HTTPS
 
@@ -118,10 +147,9 @@ Resources:
       DefaultActions: # Required
         - TargetGroupArn: !Ref ServiceTargetGroup2
           Type: forward
-      LoadBalancerArn: !Ref ServiceLoadBalancer # Required
+      LoadBalancerArn: !Ref ServiceALB # Required
       Port: 8443
       Protocol: HTTPS
-
 
   # 5. Load Balancer Listener Rule
 
@@ -172,9 +200,13 @@ Resources:
 
 Outputs:
 
+#####
+  # Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
+
   ServiceLoadBalanceUrl:
     Description: The url of the external load balancer
-    Value: !Join ['', ['http://', !GetAtt 'ServiceLoadBalancer.DNSName']]
+    Value: !Join ['', ['http://', !GetAtt 'ServiceALB.DNSName']]
     Export:
       Name: ServiceLoadBalanceUrl
 
@@ -201,3 +233,15 @@ Outputs:
     Value: !Ref ServiceTargetGroup2
     Export:
       Name: ServiceTargetGroup2Arn
+
+  ServiceProdListenerArn:
+    Description: The export arn for GraphqlProdListener
+    Value: !Ref ServiceProdListener
+    Export:
+      Name: ServiceProdListenerArn
+
+  ServiceTestListenerArn:
+    Description: The export arn for GraphqlProdListener
+    Value: !Ref ServiceTestListener
+    Export:
+      Name: ServiceTestListenerArn

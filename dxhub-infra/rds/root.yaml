@@ -9,19 +9,17 @@ Parameters:
     Type: String
     Default: dxhub
 
-  ServiceName:
-    Description: The name of first service
-    Type: String
-    Default: neocrm-api
+  # DBName:
+  #   Description: The Database Name 
+  #   Type: String
+  #   Default: dxhub-postgres
 
 Resources:
 
-  nestedIam:
+  nestedRDS:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-        # AccountId: !Ref AccountId
-        # Region: !Ref Region
-        ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/iam.yaml
+        # DBName: !Ref DBName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/rds/rds.yaml

@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AN ECS Cluster Template creating ECS Task Definition, ECS Service and CloudWatch groups
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    Default: neocrm-api
+
+  ContainerName:
+    Description: The name of the Container
+    Type: String
+    Default: webworker
+
+  DxhubCluster:
+    Description: The name of Dxhub Cluster
+    Type: String
+    Default: dxhub
+
+  PublicSubnet1a:
+    Description: Dxhub PublicSubnet1a
+    Type: String
+    Default: subnet-04ef6dbeac6590347
+
+  PublicSubnet1b:
+    Description: Dxhub PublicSubnet1b
+    Type: String
+    Default: subnet-0d6515159c1192fc0
+
+  PublicSubnet1c:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    Default: subnet-098a6dc7ffbd55c5e
+
+  # PrivateSubnet1a:
+  #   Description: Dxhub PrivateSubnet1a
+  #   Type: String
+  #   Default: subnet-0250df016f025d304
+
+  # PrivateSubnet1b:
+  #   Description: Dxhub PrivateSubnet1b
+  #   Type: String
+  #   Default: subnet-09f41e2ac8f83f639
+
+  # PrivateSubnet1c:
+  #   Description: Dxhub PrivateSubnet1b
+  #   Type: String
+  #   Default: subnet-07260c658f4c2a3eb
+
+  DynamodbInstance:
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+
+  HoneyBagerkey:
+    Description: HoneyBadger from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/HONEYBADGER_API_KEY
+
+  JRapi:
+    Description: JRapi from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/JR_API_URL
+
+Resources:
+
+  nestedECS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName: !Ref ServiceName
+        DxhubCluster: !Ref DxhubCluster
+        ContainerName: !Ref ContainerName
+        PublicSubnet1a: !Ref PublicSubnet1a
+        PublicSubnet1b: !Ref PublicSubnet1b
+        PublicSubnet1c: !Ref PublicSubnet1c
+        DynamodbInstance: !Ref DynamodbInstance
+        HoneyBagerkey: !Ref HoneyBagerkey
+        JRapi: !Ref JRapi
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/ecs-service/ecs.yaml
+

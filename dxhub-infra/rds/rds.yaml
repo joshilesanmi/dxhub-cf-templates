@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A template for RDS Creation
+
+Parameters: 
+
+  EnvironmentName:
+    Description: An Environment Name to name the resources
+    Type: String
+    # Default: dxhub
+
+  # DBName:
+  #   Description: The Database Name 
+  #   Type: String
+  #   # Default: dxhub-postgres
+
+Resources: 
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub ${EnvironmentName}-rds-subnet-group
+      SubnetIds:
+        - !ImportValue RDSSubnet1a
+        - !ImportValue RDSSubnet1b
+        - !ImportValue RDSSubnet1c
+      Tags:
+        - Key: Name 
+          Value: !Sub ${EnvironmentName}-rds
+
+  # DBCluster:
+  #   Type: AWS::RDS::DBCluster
+  #   DeletionPolicy: Delete
+  #   Properties:
+  #     BackupRetentionPeriod: 5
+  #     CopyTagsToSnapshot: true
+  #     # DatabaseName: !Ref DBName
+  #     DBClusterIdentifier: !Sub ${EnvironmentName}-postgres
+  #     # DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+  #     DBSubnetGroupName: !Ref DBSubnetGroup
+  #     DeletionProtection: false  # Change this on prod
+  #     # EnableCloudwatchLogsExports:
+  #     #   - postgresql
+  #     EnableHttpEndpoint: false
+  #     EnableIAMDatabaseAuthentication: false
+  #     Engine: aurora-postgresql
+  #     EngineMode: serverless
+  #     EngineVersion: "14.6"
+  #     KmsKeyId: !ImportValue RDSkeyArn
+  #     MasterUserPassword: !Sub '{{resolve:secretsmanager:${SecretsManagerRDSAdmin}::password}}'
+  #     MasterUsername: !Sub '{{resolve:secretsmanager:${SecretsManagerRDSAdmin}::username}}'
+  #     Port: 5432
+  #     PreferredBackupWindow: "20:00-20:30" 
+  #     PreferredMaintenanceWindow: "Sun:00:00-Sun:00:30" 
+  #     # RestoreType: full-copy
+  #     ScalingConfiguration:
+  #       AutoPause: true
+  #       # MaxCapacity: 2
+  #       # MinCapacity: 2
+  #       # SecondsBeforeTimeout: 60
+  #       # SecondsUntilAutoPause: 800
+  #       # TimeoutAction: RollbackCapacityChange
+  #     ServerlessV2ScalingConfiguration:
+  #       MaxCapacity: 1
+  #       MinCapacity: 4
+  #     StorageEncrypted: true
+  #     # StorageType: "String"
+  #     # Tags:
+  #     #   Tags
+  #     UseLatestRestorableTime: false
+  #     VpcSecurityGroupIds:
+  #       - !ImportValue RDSSecurityGroup
+
+      # Not created - Key, Availability - Multi-Az, Logs, DB Cluser Id
+      # Remove - Capacity Settings
+
+  # DBInstanceA:
+  #   Type: AWS::RDS::DBInstance
+  #   DeletionPolicy: Delete
+  #   Properties:
+  #     # AllocatedStorage: "String"
+  #     AllowMajorVersionUpgrade: false
+  #     AutoMinorVersionUpgrade: false
+  #     # AvailabilityZone: "String"
+  #     DBClusterIdentifier: !Ref DBCluster
+  #     DBInstanceClass: db.serverless
+  #     DBInstanceIdentifier: "String"
+  #     # DBName: !Sub ${EnvironmentName}-postgres-instance-1
+  #     # DBParameterGroupName: "String"
+  #     DBSubnetGroupName: !Ref DBSubnetGroup
+  #     # DeleteAutomatedBackups: false
+  #     # EnablePerformanceInsights: false
+  #     Engine: aurora-postgresql
+  #     # EngineVersion: "14.5"
+  #     KmsKeyId: !ImportValue RDSkeyArn
+  #     # MaxAllocatedStorage: 2
+  #     # MonitoringInterval: 10
+  #     # MultiAZ: false
+  #     # NetworkType: DUAL
+  #     # Port: "5432"
+  #     # PubliclyAccessible: false
+  #     # Tags:
+  #     #   Tags
+  #     # UseDefaultProcessorFeatures: false
+  #     # VPCSecurityGroups:
+  #     #   - !ImportValue RDSSecurityGroup
+
+  # DBClusterParameterGroup:
+  #   Type: AWS::RDS::DBClusterParameterGroup
+  #   Properties:
+  #     DBClusterParameterGroupName: !Sub ${EnvironmentName}-aurora-postgresql14
+  #     Description: Default cluster parameter group for aurora-postgresql14 # Required
+  #     Family: aurora-postgresql14 # Required
+  #     Parameters: 
+  #       # join_collapse_limit: 12 # Required
+  
+    # Tags:
+    #   - Key: Name
+    #     Value: !Sub ${EnvironmentName}-rds-public
+
+  # SecretsManagerRDSAdmin:
+  #   Type: AWS::SecretsManager::Secret
+  #   # DeletionPolicy: Reta
+  #   Properties:
+  #     Description: AWS RDS admin credentials
+  #     GenerateSecretString:
+  #       SecretStringTemplate: '{"username": "postgres"}'
+  #       GenerateStringKey: password
+  #       PasswordLength: 32
+  #       ExcludeCharacters: '"@/\'
+  #     Name: !Sub ${EnvironmentName}-rds
+  #     # Tags:
+  #     #   Tags
+
+# Outputs
