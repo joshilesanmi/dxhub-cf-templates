@@ -347,7 +347,7 @@ Resources:
         Version: "2012-10-17"
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
-      RoleName: !Sub ${EnvironmentName}-codedeploy-lifecycle-role
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}-codedeploy-lifecycle-role
       Policies:
         -
           PolicyName: KMS-decrypt-SSM-read-ssm
@@ -409,7 +409,7 @@ Resources:
             Principal:
               Service: [codepipeline.amazonaws.com]
             Action: ['sts:AssumeRole']
-      RoleName: !Sub codepipeline-${EnvironmentName}-service-role
+      RoleName: !Sub codepipeline-${EnvironmentName}-${ServiceName}-service-role
       ManagedPolicyArns:
         - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
       Policies:

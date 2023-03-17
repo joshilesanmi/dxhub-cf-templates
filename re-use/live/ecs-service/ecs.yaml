@@ -13,73 +13,73 @@ Parameters:
     Type: String
     # Default: neocrm-api
 
-  ServiceECRRepository:
-    Description: The Graphql ECR Repository
+  ContainerName:
+    Description: The name of the Container
     Type: String
-    # Default: Graphql
+    # Default: webworker
 
-  ServiceCluster:
-    Description: The ECS Cluster for graphql
+  DxhubCluster:
+    Description: The name of Dxhub Cluster
     Type: String
-    # Default: Graphql
+    # Default: dxhub
+
+  PublicSubnet1a:
+    Description: Dxhub PublicSubnet1a
+    Type: String
+    # Default: subnet-04ef6dbeac6590347
+
+  PublicSubnet1b:
+    Description: Dxhub PublicSubnet1b
+    Type: String
+    # Default: subnet-0d6515159c1192fc0
+
+  PublicSubnet1c:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    # Default: subnet-098a6dc7ffbd55c5e
+
+  # PrivateSubnet1a:
+  #   Description: Dxhub PrivateSubnet1a
+  #   Type: String
+  #   # Default: subnet-0250df016f025d304
+
+  # PrivateSubnet1b:
+  #   Description: Dxhub PrivateSubnet1b
+  #   Type: String
+  #   # Default: subnet-09f41e2ac8f83f639
+
+  # PrivateSubnet1c:
+  #   Description: Dxhub PrivateSubnet1b
+  #   Type: String
+  #   # Default: subnet-07260c658f4c2a3eb
 
   DynamodbInstance:
       Description: DbHost from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   HoneyBagerkey:
-      Description: DbHost from Parameter Store for the container
+      Description: HoneyBagerkey from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
   JRapi:
-      Description: DbHost from Parameter Store for the container
+      Description: JRapi from Parameter Store for the container
       Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
-
-  ECSTaskExecutionRoleArn:
-      Description: ECS Task Execution Role
-      Type: String
-      # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
-
-  PrivateSubnet1a:
-      Description: Ref to VPC Subnets
-      Type: String
-      # Default: subnet-0b2b5fa13afbf3479
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
 
 Resources:
 
-  # 1. ECR Repositories
+#####
+  # Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb, 
+#####
 
-  # Repository for image of dreamin in production
+  # 1. ECR Repositories
 
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Sub ${EnvironmentName}-${ServiceECRRepository}
-
-  # 2. ECS Clusters
-
-  ECSCluster1:
-    Type: AWS::ECS::Cluster
-    Properties:
-      CapacityProviders:
-        - FARGATE
-      ClusterName: !Ref ServiceCluster
-      Tags:
-        - Key: Name
-          Value: !Sub ${ServiceCluster}
-
-  ECSCluster2:
-    Type: AWS::ECS::Cluster
-    Properties:
-      CapacityProviders:
-        - FARGATE
-      ClusterName: !Ref ServiceCluster
-      Tags:
-        - Key: Name
-          Value: !Sub ${ServiceCluster}
+      RepositoryName: !Sub ${EnvironmentName}-${ServiceName}
 
   # 3. Task Definition
 
@@ -88,13 +88,12 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Name: !Ref ServiceName
-          Cpu: 512
-          Memory: 1024
-          Image: !Ref ECRRepository
+          Memory: 128
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
           PortMappings:
-            - ContainerPort: 4000
+            - ContainerPort: 8081
               Protocol: tcp
-              HostPort: 4000
+              HostPort: 8081
           Command:
             - "/neocrm-api"
             - "webworker"
@@ -107,13 +106,15 @@ Resources:
               ValueFrom: !Ref HoneyBagerkey
             - Name: JR_API_URL
               ValueFrom: !Ref JRapi
-          # Environment:
-          #   - Name: CORE_SERVICE_HOST
-          #     Value: ""
+          Environment:
+            - Name: AWS_XRAY_CONTEXT_MISSING
+              Value: LOG_ERROR
+            - Name: HONEYBADGER_ENV
+              Value: production
           HealthCheck:
             Command:
               -  "CMD-SHELL"
-              - "/xray --version || exit 1"
+              - "curl http://127.0.0.1:8081/health_check || exit 1"
             Interval: 5
             Retries: 3
             StartPeriod: 0
@@ -124,7 +125,7 @@ Resources:
               awslogs-create-group: true
               awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
               awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: !Sub ${ServiceName}-svc
+              awslogs-stream-prefix: !Sub ${ServiceName}
         - Name: xray-daemon
           Cpu: 32
           Memory: 128
@@ -149,7 +150,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn
+      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -167,22 +168,14 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 30
-      LogGroupName: !Sub "/aws/ecs/${ECSCluster1}"
-
-  ECSCluster2CloudWatchLogsGroupCluster:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 30
-      LogGroupName: !Sub "/aws/ecs/${ECSCluster2}"
+      LogGroupName: !Sub "/aws/ecs/${DxhubCluster}"
 
   # 5. Service
-
-  # dreamin in production cluster
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !Ref ECSCluster1
+      Cluster: !Ref DxhubCluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -194,11 +187,11 @@ Resources:
       # HealthCheckGracePeriodSeconds: Number
       LaunchType: FARGATE
       LoadBalancers:
-        - ContainerName: !Ref ServiceName
-          ContainerPort: 4000
+        - ContainerName: !Ref ContainerName
+          ContainerPort: 8081
           TargetGroupArn: !ImportValue ServiceTargetGroup1Arn
-        - ContainerName: graphql
-          ContainerPort: 4000
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 8081
           TargetGroupArn: !ImportValue ServiceTargetGroup2Arn
       NetworkConfiguration:
         AwsvpcConfiguration:
@@ -206,7 +199,9 @@ Resources:
           SecurityGroups:
             - !ImportValue ServiceSecurityGroup
           Subnets:
-            - !Ref PrivateSubnet1a
+            - !Ref PublicSubnet1a
+            - !Ref PublicSubnet1b
+            - !Ref PublicSubnet1c
       # PlatformVersion: "String"
       PropagateTags: TASK_DEFINITION
       SchedulingStrategy: REPLICA
@@ -216,17 +211,9 @@ Resources:
 
 Outputs:
 
-  ECSCluster1:
-    Description: The name of the GraphqlCluster
-    Value: !Ref ECSCluster1
-    Export:
-      Name: GraphqlCluster
-
-  ECSCluster2:
-    Description: The name of the CoreSvcCluster
-    Value: !Ref ECSCluster2
-    Export:
-      Name: CoreSvcCluster
+#####
+  # Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
 
   ECSServiceName:
     Description: Export for the ECSService

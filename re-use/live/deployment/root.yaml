@@ -1,0 +1,56 @@
+
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    Default: neocrm-api
+
+  DxhubCluster:
+    Description: The name of Dxhub Cluster
+    Type: String
+    Default: dxhub
+
+  CodestarConnection:
+    Description: Connection to dxhub github
+    Type: String
+    Default: arn:aws:codestar-connections:eu-west-1:115379056088:connection/5e6f0819-7a88-48a0-82b2-bc39b44a50ca
+
+  RepositoryName:
+    Type: String
+    Description: The GitHub Repo Name
+    Default: infopark/dxhub
+
+  BranchName:
+    Type: String
+    Description: The GitHub Repo Name
+    Default: neocrm-dev
+
+  S3ArtifactBucket:
+    Description: CodeBuild Service Role Arn
+    Type: String
+    Default: codepipeline-eu-central-1-675644474011
+
+
+Resources:
+
+  nestedDeployment:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName: !Ref ServiceName
+        DxhubCluster: !Ref DxhubCluster
+        CodestarConnection: !Ref CodestarConnection
+        RepositoryName: !Ref RepositoryName
+        BranchName: !Ref BranchName
+        S3ArtifactBucket: !Ref S3ArtifactBucket
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/deployment/deployment.yaml

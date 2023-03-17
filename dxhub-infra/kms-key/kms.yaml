@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to deploy RDS kms-key
+
+Parameters: 
+
+  EnvironmentName:
+    Description: Environment Name for the resources
+    Type: String
+    # Default: dxhub
+
+Resources: 
+
+  RDSkey:
+    Type: AWS::KMS::Key
+    Properties:
+      
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-rds
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-policy
+        Statement:
+          - 
+            Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: !Join 
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
+            Action:
+              - 'kms:*'
+            Resource: 
+              - '*'
+          -
+            Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS: 
+                # - !Sub "arn:aws:iam::${AWS::AccountId}:user/anne.schulz+***@infopark.de"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/development-team"
+            Action: 
+              - 'kms:Create*'
+              - 'kms:Describe*'
+              - 'kms:Enable*'
+              - 'kms:List*'
+              - 'kms:Put*'
+              - 'kms:Update*'
+              - 'kms:Revoke*'
+              - 'kms:Disable*'
+              - 'kms:Get*'
+              - 'kms:Delete*'
+              - 'kms:TagResource'
+              - 'kms:UntagResource'
+              - 'kms:ScheduleKeyDeletion'
+              - 'kms:CancelKeyDeletion'
+            Resource: '*'
+          -
+            Sid: Allow roles use of the key
+            Effect: Allow
+            Principal:
+                AWS:
+                    - !Sub "arn:aws:iam::${AWS::AccountId}:role/dxhub-service-task-execution-role"
+                    - !Sub "arn:aws:iam::${AWS::AccountId}:role/dxhub-neocrm-api-ecs-task-role"
+            Action:
+                - 'kms:Encrypt'
+                - 'kms:Decrypt'
+                - 'kms:ReEncrypt*'
+                - 'kms:GenerateDataKey*'
+                - 'kms:DescribeKey'
+            Resource: '*'
+          -
+            Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+                AWS:
+                    - !Sub "arn:aws:iam::${AWS::AccountId}:role/dxhub-service-task-execution-role"
+                    - !Sub "arn:aws:iam::${AWS::AccountId}:role/dxhub-neocrm-api-ecs-task-role"
+            Action:
+                - 'kms:CreateGrant'
+                - 'kms:ListGrants'
+                - 'kms:RevokeGrant'
+            Resource: '*'
+            # Conditions:
+            #   "Bool": 
+            #     "kms:GrantIsForAWSResource": "true"
+
+  RDSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${EnvironmentName}-rds
+      TargetKeyId: !Ref RDSkey
+
+Outputs:
+
+  RDSkeyId:
+    Description: Export for RDS Key Id
+    Value: !Ref RDSkey
+    Export: 
+      Name: RDSkeyId
+
+  RDSkeyArn:
+    Description: Export for RDS Key Arn
+    Value: !GetAtt RDSkey.Arn
+    Export: 
+      Name: RDSkeyArn
+
+  RDSAliasName:
+    Description: Export for RDS Key Alias Name
+    Value: !Ref RDSKeyAlias
+    Export: 
+      Name: RDSAliasName

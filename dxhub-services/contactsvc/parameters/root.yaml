@@ -1,6 +1,5 @@
-# S3 URL for root - https://trox-backend-cf.s3.eu-central-1.amazonaws.com/Test/iam/root.yaml
-
 AWSTemplateFormatVersion: 2010-09-09
+Description: Root template for nested deployment
 
 Parameters:
 
@@ -12,16 +11,16 @@ Parameters:
   ServiceName:
     Description: The name of first service
     Type: String
-    Default: neocrm-api
+    Default: contactsvc
 
 Resources:
 
-  nestedIam:
+  nestedECS:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-        # AccountId: !Ref AccountId
-        # Region: !Ref Region
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/iam.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/ecs-service/contactsvc/parameters/nested-parameters.yaml
+
+# Outputs:
