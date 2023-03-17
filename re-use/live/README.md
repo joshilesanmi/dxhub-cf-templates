@@ -8,7 +8,7 @@
         - The root files to each service has a url pointing to the s3 bucket containing the templates ensure that the url is correct in every deployment
 
 
-# 1. IAM STACK
+# 1. IAM 
 
     This is the first deployment to create in aws
 
@@ -16,11 +16,11 @@
 
         # Export section
 
-        Make changes on the export Name Value to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates.
+            Make changes on the export Name Value to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates.
 
-        Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+            Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
 
-        Then deploy the stack
+            Then deploy the stack
 
 
 # 2. Security
