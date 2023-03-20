@@ -14,11 +14,12 @@
 
         # Export section
 
-            Make changes on the export Name Value to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates.
+            The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
 
-            Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+                !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
 
-            Then deploy the stack
+            # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+
 
 
 # 2. Security
@@ -37,9 +38,11 @@
 
             # Export section
 
-                Make changes on the export Name Value to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates.
+                The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
 
-                Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+                    !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
+
+                # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
 
     Then deploy the stack
 
@@ -104,9 +107,12 @@
 
         # Export section
 
-            Make changes on the export Name Value to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates.
+            The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
 
-            Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+                !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
+
+            # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+
 
      Then deploy the stack
 
@@ -152,9 +158,12 @@
 
     # Export section
 
-        Make changes on the export Name Value to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates.
+        The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
 
-        Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+            !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
+
+        # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+
 
      Then deploy the stack
 
