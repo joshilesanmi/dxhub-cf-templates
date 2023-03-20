@@ -114,8 +114,8 @@
 
         - Iam Roles
         - Security Group
-        - Subnets
-        - Target group
+        - Subnets - Modify Subnets to the desired location of your service. ( The Dxhub infra allows you to choose between PublicSubnet 1-3 or PrivateSubnet 1-3)
+        - Target groups 
 
     # The resources to be imported above are already created from the previous deployments and some are part of the dxhub infr i.e. subnets
 

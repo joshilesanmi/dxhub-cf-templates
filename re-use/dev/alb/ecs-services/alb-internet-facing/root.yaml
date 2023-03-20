@@ -28,6 +28,6 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
         Certificate: !Ref Certificate
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/alb/ecs-services/alb-internet-facing/nested-alb.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/alb/ecs-services/alb-internet-facing/alb.yaml
 
   

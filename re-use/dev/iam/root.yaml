@@ -22,4 +22,4 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/nested-iam.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/iam.yaml

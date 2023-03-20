@@ -81,7 +81,7 @@ Resources:
     Properties:
       RepositoryName: !Sub ${EnvironmentName}-${ServiceName}
 
-  # 3. Task Definition
+  # 2. Task Definition
 
   ServiceTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -123,7 +123,7 @@ Resources:
             LogDriver: awslogs
             Options:
               awslogs-create-group: true
-              awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
+              awslogs-group: /aws/ecs/dxhub
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}
         - Name: xray-daemon
@@ -146,11 +146,11 @@ Resources:
             LogDriver: awslogs
             Options:
               awslogs-create-group: true
-              awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
+              awslogs-group: /aws/ecs/dxhub
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn
+      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn # Change Expected
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -160,17 +160,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn
+      TaskRoleArn: !ImportValue ECSTaskRoleArn # Change Expected
 
-  # 4. Cloud Watch Logs
-
-  ECSCluster1CloudWatchLogsGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 30
-      LogGroupName: !Sub "/aws/ecs/${DxhubCluster}"
-
-  # 5. Service
+  # 3. Service
 
   ECSService:
     Type: AWS::ECS::Service
@@ -189,16 +181,16 @@ Resources:
       LoadBalancers:
         - ContainerName: !Ref ContainerName
           ContainerPort: 8081
-          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn
+          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn # Change Expected
         - ContainerName: !Ref ServiceName
           ContainerPort: 8081
-          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn
+          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn # Change Expected
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !ImportValue ServiceSecurityGroup
-          Subnets:
+            - !ImportValue ServiceSecurityGroup # Change Expected
+          Subnets: # Change Expected if Service is in another subnet
             - !Ref PublicSubnet1a
             - !Ref PublicSubnet1b
             - !Ref PublicSubnet1c
@@ -212,12 +204,13 @@ Resources:
 Outputs:
 
 #####
-  # Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue neocrm-ecs-service
 #####
+
 
   ECSServiceName:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: ECSServiceName
-
+      Name: !Sub ${ServiceName}-ecs-service

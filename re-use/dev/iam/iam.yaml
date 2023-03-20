@@ -37,53 +37,6 @@ Resources:
   #     ManagedPolicyArns:
   #       - 'arn:aws:iam::aws:policy/aws-service-role/AmazonECSServiceRolePolicy'
 
-  # This is a role which is used by the executioner (the thing that starts ECS tasks).
-
-  ECSTaskExecutionRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: [ecs-tasks.amazonaws.com]
-            Action: ['sts:AssumeRole']
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
-      RoleName: !Sub ${EnvironmentName}-service-task-execution-role
-      Path: /
-      Policies:
-        -
-          PolicyName: ssm-kms-read
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Allow the executioner to read from ParameterStore
-              - Sid: SsmRead
-                Effect: Allow
-                Action:
-                  - 'ssm:Describe*'
-                  - 'ssm:Get*'
-                  - 'ssm:List*'
-                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}/*"
-              # Allow the executioner to use a kms key
-              - Sid: KmsUse
-                Effect: Allow
-                Action:
-                  - kms:Decrypt
-                  - kms:DescribeKey
-                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm"
-              # Allow the executioner to use keys from the SecretsManager
-              - Sid: SecretsManagerRead
-                Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${EnvironmentName}/*"
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-service-task-execution
-
   # # This is a role which is used by the ECS tasks themselves.
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -395,40 +348,34 @@ Resources:
 Outputs:
 
 #####
-# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue neocrm-api-ecs-task-role-arn
 #####
-
-  ECSTaskExecutionRoleArn:
-    Description: Export value for the ECSTaskExecutionRole
-    Value: !GetAtt ECSTaskExecutionRole.Arn
-    Export:
-      Name: ECSTaskExecutionRoleArn
-      # arn:aws:iam::698195851833:role/dxhub-service-task-execution-role
 
   ECSTaskRoleArn:
     Description: Export Value for the ECSTaskRole
     Value: !GetAtt ECSTaskRole.Arn
     Export:
-      Name: ECSTaskRoleArn
+      Name: !Sub ${ServiceName}-ecs-task-role-arn
       # arn:aws:iam::698195851833:role/dxhub-neocrm-api-ecs-task-role
 
   CodeBuildServiceRoleArn:
     Description: Export Arn Value for the CodeBuild Service Role
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
-      Name: CodeBuildServiceRoleArn
+      Name: !Sub ${ServiceName}-codebuild-service-role-arn
       # arn:aws:iam::698195851833:role/codebuild-neocrm-api-service-role
 
   CodeDeployServiceRoleArn:
     Description: Export Arn Value for the CodeDeploy Service Role
     Value: !GetAtt CodeDeployServiceRole.Arn
     Export:
-      Name: CodeDeployServiceRoleArn
+      Name: !Sub ${ServiceName}-codedeploy-service-role-arn
       # arn:aws:iam::698195851833:role/AWSServiceForCodeDeploy2ECS
 
   CodePipelineServiceRoleArn:
     Description: Export Arn Value for the CodePipeline Service Role
     Value: !GetAtt CodePipelineServiceRole.Arn
     Export:
-      Name: CodePipelineServiceRoleArn
+      Name: !Sub ${ServiceName}-codepipeline-service-role-arn
       # arn:aws:iam::698195851833:role/codepipeline-neocrm-api-service-role

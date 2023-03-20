@@ -20,4 +20,4 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/nested-security.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/security.yaml
