@@ -47,4 +47,4 @@ Resources:
         RepositoryName: !Ref RepositoryName
         BranchName: !Ref BranchName
         S3ArtifactBucket: !Ref S3ArtifactBucket
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/deployment/nested-deployment.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/deployment/deployment.yaml

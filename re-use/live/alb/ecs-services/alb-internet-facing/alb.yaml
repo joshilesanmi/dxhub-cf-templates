@@ -201,47 +201,48 @@ Resources:
 Outputs:
 
 #####
-  # Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
 #####
 
   ServiceLoadBalanceUrl:
     Description: The url of the external load balancer
     Value: !Join ['', ['http://', !GetAtt 'ServiceALB.DNSName']]
     Export:
-      Name: ServiceLoadBalanceUrl
+      Name: !Sub ${ServiceName}-alb-url # contactsvc-alb-url
 
   ServiceTargetGroup1Name:
     Description: The export name for ServiceTargetGroup1
     Value: !GetAtt ServiceTargetGroup1.TargetGroupName
     Export:
-      Name: ServiceTargetGroup1Name
+      Name: !Sub ${ServiceName}-tg-1-name # contactsvc-target-group-1-name
 
   ServiceTargetGroup1Arn:
     Description: The export arn for ServiceTargetGroup1
     Value: !Ref ServiceTargetGroup1
     Export:
-      Name: ServiceTargetGroup1Arn
+      Name: !Sub ${ServiceName}-tg-1-arn # contactsvc-target-group-1-arn
 
   ServiceTargetGroup2Name:
     Description: The export name for ServiceTargetGroup2
     Value: !GetAtt ServiceTargetGroup2.TargetGroupName
     Export:
-      Name: ServiceTargetGroup2Name
+      Name: !Sub ${ServiceName}-tg-2-name
 
   ServiceTargetGroup2Arn:
     Description: The export arn for ServiceTargetGroup2
     Value: !Ref ServiceTargetGroup2
     Export:
-      Name: ServiceTargetGroup2Arn
+      Name: !Sub ${ServiceName}-tg-2-arn
 
   ServiceProdListenerArn:
     Description: The export arn for GraphqlProdListener
     Value: !Ref ServiceProdListener
     Export:
-      Name: ServiceProdListenerArn
+      Name: !Sub ${ServiceName}-prod-listener-arn # contactsvc-prod-listener-arn
 
   ServiceTestListenerArn:
-    Description: The export arn for GraphqlProdListener
+    Description: The export arn for GraphqlProdListener # contactsvc-test-listener-arn
     Value: !Ref ServiceTestListener
     Export:
-      Name: ServiceTestListenerArn
+      Name: !Sub ${ServiceName}-test-listener-arn

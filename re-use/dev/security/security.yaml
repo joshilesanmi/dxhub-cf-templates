@@ -75,12 +75,13 @@ Resources:
 Outputs:
 
 #####
-# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue contactsvc-sg
 #####
 
   ServiceSecurityGroup:
     Description: A security group for Service
     Value: !Ref ServiceSecurityGroup
     Export:
-      Name: ServiceSecurityGroup
+      Name: !Sub ${ServiceName}-sg
 

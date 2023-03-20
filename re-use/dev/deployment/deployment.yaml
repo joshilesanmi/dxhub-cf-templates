@@ -57,7 +57,7 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Required
+      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Change Expected
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -89,7 +89,7 @@ Resources:
         Location: codepipeline-eu-west-2-0126153986/cache-deploy
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildServiceRoleArn
+      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Change Expected
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -140,19 +140,19 @@ Resources:
         DeploymentType: BLUE_GREEN
       ECSServices:
         - ClusterName: !ImportValue ECSCluster
-          ServiceName: !ImportValue ECSServiceName
+          ServiceName: !ImportValue ECSServiceName # Change Expected
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceProdListenerArn
+                - !ImportValue ServiceProdListenerArn # Change Expected
             TestTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceTestListenerArn
+                - !ImportValue ServiceTestListenerArn # Change Expected
             TargetGroups:
-              - Name: !ImportValue ServiceTargetGroup1Name
-              - Name: !ImportValue ServiceTargetGroup2Name
-      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
+              - Name: !ImportValue ServiceTargetGroup1Name # Change Expected
+              - Name: !ImportValue ServiceTargetGroup2Name # Change Expected
+      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # # Change Expected
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -169,7 +169,7 @@ Resources:
         Type: S3
       Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
+      RoleArn: !ImportValue CodePipelineServiceRoleArn # Change Expected
       Stages: # Required
         - Name: Source
           Actions:

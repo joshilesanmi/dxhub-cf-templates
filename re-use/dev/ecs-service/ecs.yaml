@@ -41,19 +41,7 @@ Resources:
     Properties:
       RepositoryName: !Sub ${EnvironmentName}-${ServiceName}
 
-  # 2. ECS Clusters
-
-  ECSCluster:
-    Type: AWS::ECS::Cluster
-    Properties:
-      CapacityProviders:
-        - FARGATE
-      ClusterName: !Ref EnvironmentName
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}
-
-  # 3. Task Definition
+  # 2. Task Definition
 
   ServiceTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -95,7 +83,7 @@ Resources:
             LogDriver: awslogs
             Options:
               awslogs-create-group: true
-              awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
+              awslogs-group: /aws/ecs/dxhub
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}
         - Name: xray-daemon
@@ -118,11 +106,11 @@ Resources:
             LogDriver: awslogs
             Options:
               awslogs-create-group: true
-              awslogs-group: !Ref ECSCluster1CloudWatchLogsGroup
+              awslogs-group: /aws/ecs/dxhub
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn
+      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn # Change Expected
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -132,22 +120,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn
+      TaskRoleArn: !ImportValue ECSTaskRoleArn # Change Expected
 
-  # 4. Cloud Watch Logs
-
-  ECSCluster1CloudWatchLogsGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 30
-      LogGroupName: !Sub "/aws/ecs/${ECSCluster}"
-
-  # 5. Service
+  # 4. Service
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !Ref ECSCluster
+      Cluster: !ImportValue ECSCluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -161,16 +141,16 @@ Resources:
       LoadBalancers:
         - ContainerName: !Ref ServiceName
           ContainerPort: 8081
-          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn
+          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn # Change Expected
         - ContainerName: !Ref ServiceName
           ContainerPort: 8081
-          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn
+          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn # Change Expected
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !ImportValue ServiceSecurityGroup
-          Subnets:
+            - !ImportValue ServiceSecurityGroup # Change Expected
+          Subnets: # Change Expected if Service is in another subnet
             - !ImportValue PublicSubnet1a
             - !ImportValue PublicSubnet1b
             - !ImportValue PublicSubnet1c
@@ -184,18 +164,13 @@ Resources:
 Outputs:
 
 #####
-  # Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue neocrm-ecs-service
 #####
-
-  ECSCluster:
-    Description: The name of the ServiceCluster1
-    Value: !Ref ECSCluster
-    Export:
-      Name: ECSCluster
 
   ECSServiceName:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: ECSServiceName
+      Name: !Sub ${ServiceName}-ecs-service
 
