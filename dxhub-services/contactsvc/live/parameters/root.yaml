@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Root template for nested deployment
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    Default: dxhub
+
+Resources:
+
+  nestedECS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/parameters/parameters.yaml
+
+# Outputs:
