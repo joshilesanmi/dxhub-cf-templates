@@ -38,6 +38,11 @@ Parameters:
     Type: String
     # Default: subnet-098a6dc7ffbd55c5e
 
+  AlbSg:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    # Default: sg-088007583ceeaf250
+
   Path:
     Type: String
     Description: A path on the public load balancer that this service
@@ -98,7 +103,7 @@ Resources:
     Properties:
       Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internet-facing
-      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
+      SecurityGroups: [!Ref AlbSg]
       Subnets:
         - !Ref PublicSubnet1a
         - !Ref PublicSubnet1b
