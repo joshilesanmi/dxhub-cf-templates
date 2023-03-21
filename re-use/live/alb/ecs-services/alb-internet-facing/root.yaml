@@ -54,6 +54,11 @@ Parameters:
   #   Type: String
   #   Default: subnet-07260c658f4c2a3eb
 
+  AlbSg:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    Default: sg-088007583ceeaf250
+
 Resources:
 
   nestedALB:
@@ -70,6 +75,7 @@ Resources:
         # PrivateSubnet1a: !Ref PrivateSubnet1a
         # PrivateSubnet1b: !Ref PrivateSubnet1b
         # PrivateSubnet1c: !Ref PrivateSubnet1c
+        AlbSg: !Ref AlbSg
       TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/alb/ecs-services/alb-internet-facing/alb.yaml
 
   

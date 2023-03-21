@@ -80,7 +80,7 @@ Resources:
     Properties:
       Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internal
-      SecurityGroups: [!ImportValue ServiceSecurityGroup]
+      SecurityGroups: [!ImportValue ServiceSecurityGroup] # Change Expected - here two changes are expectes sg for internal alb or sg for public alb 
       Subnets:
         - !ImportValue PublicSubnet1a
         - !ImportValue PublicSubnet1b

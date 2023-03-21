@@ -78,7 +78,7 @@ Resources:
     Properties:
       Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internet-facing
-      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG] # Change Expected - here two changes are expectes sg for internal alb or sg for public alb
       Subnets:
         - !ImportValue PublicSubnet1a
         - !ImportValue PublicSubnet1b
