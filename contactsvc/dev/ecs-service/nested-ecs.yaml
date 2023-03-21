@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AN ECS Cluster Template creating ECS Task Definition, ECS Service and CloudWatch groups
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: contactsvc
+
+  HoneyBagerkey:
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
+
+  DBHost:
+    Description: Db Host from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
+
+  DBName:
+    Description: Db Name from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+
+  DBUsername:
+    Description: Db username from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+
+  DBPassword:
+    Description: Db password from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+
+Resources:
+
+#####
+# Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb,
+#####
+
+  # 1. ECR Repositories
+
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${ServiceName}
+
+  # 2. Task Definition
+
+  ServiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Memory: 128
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
+          PortMappings:
+            - ContainerPort: 8101
+              Protocol: tcp
+              HostPort: 8101
+          Command:
+            - "/contactsvc"
+            - "webworker"
+            - "--http-addr"
+            - ":8101"
+          Secrets:
+            - Name: HONEYBADGER_API_KEY
+              ValueFrom: !Ref HoneyBagerkey
+            - Name: POSTGRES_DATABASE
+              ValueFrom: !Ref DBName
+            - Name: POSTGRES_HOST
+              ValueFrom: !Ref DBHost
+            - Name: POSTGRES_USERNAME
+              ValueFrom: !Ref DBUsername
+            - Name: POSTGRES_PASSWORD
+              ValueFrom: !Ref DBPassword
+          Environment:
+            - Name: AWS_XRAY_CONTEXT_MISSING
+              Value: LOG_ERROR
+            - Name: HONEYBADGER_ENV
+              Value: production
+            - Name: POSTGRES_PORT
+              Value: "5432"
+          HealthCheck:
+            Command:
+              -  "CMD-SHELL"
+              - "curl http://127.0.0.1:8101/health_check || exit 1"
+            Interval: 5
+            Retries: 3
+            StartPeriod: 0
+            Timeout: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: /aws/ecs/dxhub
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${ServiceName}
+        - Name: xray-daemon
+          Cpu: 32
+          Memory: 128
+          Image: amazon/aws-xray-daemon
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+              HostPort: 2000
+          HealthCheck:
+            Command:
+              - "CMD-SHELL"
+              - "/xray --version || exit 1"
+            Interval: 5
+            Retries: 3
+            StartPeriod: 0
+            Timeout: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: /aws/ecs/dxhub
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${ServiceName}-xray
+      Cpu: .5vCPU
+      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn
+      Family: !Sub ${EnvironmentName}-${ServiceName}
+      Memory: 1GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+        - EC2
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
+      TaskRoleArn: !ImportValue ECSTaskRoleArn
+
+  # 3. Service
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !ImportValue ECSCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 75
+      DeploymentController:
+        Type: CODE_DEPLOY
+      DesiredCount: 0
+      EnableECSManagedTags: false
+      EnableExecuteCommand: true
+      # HealthCheckGracePeriodSeconds: Number
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 8101
+          TargetGroupArn: !ImportValue contactsvc-target-group-1-arn
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 8101
+          TargetGroupArn: !ImportValue contactsvc-target-group-2-arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !ImportValue conactsvc-security-group
+          Subnets:
+            - !ImportValue PublicSubnet1a
+            - !ImportValue PublicSubnet1b
+            - !ImportValue PublicSubnet1c
+      # PlatformVersion: "String"
+      PropagateTags: TASK_DEFINITION
+      SchedulingStrategy: REPLICA
+      ServiceName: !Sub ${ServiceName}
+      TaskDefinition: !Ref ServiceTaskDefinition
+
+Outputs:
+
+#####
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
+
+  ECSServiceName:
+    Description: Export for the ECSService
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: contactsvc-ecs-name

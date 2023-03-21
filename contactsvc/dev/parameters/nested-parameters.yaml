@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A template to create parameter store values
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+Resources:
+
+  DynamoDbInstanceTable:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Dynamo DB Instance table name
+      Name: !Sub /${EnvironmentName}/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+      Tier: Standard
+      Type: String
+      Value: jr-instance-configuration
+
+  JRApiUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Jr Api Url
+      Name: !Sub /${EnvironmentName}/JR_API_URL
+      Tier: Standard
+      Type: String
+      Value: https://api.justrelate.com
+
+  DockerHubLogin:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Docker Hub login
+      Name: !Sub /${EnvironmentName}/CodeBuild/DOCKER_HUB_LOGIN
+      Tier: Standard
+      Type: String
+      Value: infoparkdev
+
+  AccountID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: AccountID for aws
+      Name: !Sub /${EnvironmentName}/ACCOUNT_ID
+      Tier: Standard
+      Type: String
+      Value: '012615398682'
+
+  Region:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Region for contactsvc
+      Name: !Sub /${EnvironmentName}/REGION
+      Tier: Standard
+      Type: String
+      Value: eu-west-2
+
+Outputs:
+
+  DynamoDbInstanceTableName:
+    Description: The parameter name for DynamoDbInstanceTable
+    Value: !Ref DynamoDbInstanceTable
+    Export:
+      Name: DynamoDbInstanceTableName
+
+  JRApiUrlName:
+    Description: The parameter name for JRApiUrl
+    Value: !Ref JRApiUrl
+    Export:
+      Name: JRApiUrlName
+
+  DockerHubLoginName:
+    Description: The parameter name for DockerHubLogin
+    Value: !Ref DockerHubLogin
+    Export:
+      Name: DockerHubLoginName
+
+  AccountIDName:
+    Description: The parameter name for AccountID
+    Value: !Ref AccountID
+    Export:
+      Name: AccountIDName
+
+  RegionName:
+    Description: The parameter name for Region
+    Value: !Ref Region
+    Export:
+      Name: RegionName
