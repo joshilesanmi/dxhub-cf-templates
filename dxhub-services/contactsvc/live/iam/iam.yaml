@@ -1,0 +1,360 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Iam Roles for ECS Service
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: contactsvc
+
+Resources:
+
+  # # This is a role which is used by the ECS tasks themselves.
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-task-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+      Policies:
+        -
+          PolicyName: cw-logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the ECS Tasks to write logs
+              - Sid: CwLogsWrite
+                Effect: "Allow"
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:/aws/ecs/${EnvironmentName}*"
+        -
+          PolicyName: dxhub-use-shared-key
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseKMSKey
+                Effect: "Allow"
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                  - kms:DescribeKey
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/dxhub-shared"
+        -
+          PolicyName: KMS-use-jr-configuration-key
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseSSMKey
+                Effect: "Allow"
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                  - kms:DescribeKey
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/jr-configuration-key"
+        -
+          PolicyName: read-jr-instance-configuration
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: UseSSMKey
+                Effect: "Allow"
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:GetItem
+                  - dynamodb:ListTables
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/jr-instance-configuration"
+        -
+          PolicyName: ssm-channel-handling
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: SsmChannelHandling
+                Effect: "Allow"
+                Action:
+                  # Allow the ECS Tasks to handle channels
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: '*'
+        -
+          PolicyName: cw-putmetrics
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CwPutMetricData
+                Effect: "Allow"
+                Action:
+                # Allow the ECS Tasks to put metric data to CloudWatch (monitoring)
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+
+  CodeBuildServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com]
+            Action: ['sts:AssumeRole']
+        Version: "2012-10-17"
+      RoleName: !Sub codebuild-${EnvironmentName}-${ServiceName}-service-role
+      # ManagedPolicyArns:
+      #   - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
+      Path: /
+      Policies:
+        -
+          PolicyName: codebuild-base-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CwLogs
+                Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${EnvironmentName}-*"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${EnvironmentName}-${ServiceName}-*:log-stream:*"
+              - Sid: S3WriteCodePipelineArtifacts
+                Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketLocation'
+                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
+              - Sid: CodeBuildReports
+                Effect: Allow
+                Action:
+                  - 'codebuild:CreateReportGroup'
+                  - 'codebuild:CreateReport'
+                  - 'codebuild:UpdateReport'
+                  - 'codebuild:BatchPutTestCases'
+                  - 'codebuild:BatchPutCodeCoverages'
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:BatchGetBuilds'
+                Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${EnvironmentName}-*"
+              - Sid: SecretsManagerGet
+                Effect: Allow
+                Action:
+                  - 'secretsmanager:DescribeSecret'
+                  - 'secretsmanager:GetSecretValue'
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${EnvironmentName}/*"
+        -
+          PolicyName: cloudfront-update-invalidate
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CloudFrontOperations
+                Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                  - cloudfront:GetDistribution
+                  - cloudfront:GetInvalidation
+                  - cloudfront:UpdateDistribution
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/*"
+        -
+          PolicyName: ecr-readwrite-dxhub-contactsvc
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: EcrAuth
+                Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                Resource: '*'
+              - Sid: EcrPush
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${EnvironmentName}-*"
+        -
+          PolicyName: kms-decrypt-ssm-read
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid:  UseSSMkey
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/ssm"
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/dxhub-contactsvc"
+              - Sid:  SsmList
+                Effect: Allow
+                Action:
+                  - ssm:DescribeParameters
+                Resource: '*'
+              - Sid: SsmRead
+                Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/codebuild*/*"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}-${ServiceName}/*"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}*/*"
+        -
+          PolicyName: s3-readwrite-bucket-dxhub-contactsvc-doc
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid:  ObjectOperations
+                Effect: Allow
+                Action:
+                  - s3:AbortMultipartUpload
+                  - s3:DeleteObject
+                  - s3:DeleteObjectVersion
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListMultipartUploadParts
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${EnvironmentName}-${ServiceName}-doc/*"
+              - Sid:  BucketOperations
+                Effect: Allow
+                Action:
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetLifecycleConfiguration
+                  - s3:PutLifecycleConfiguration
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${EnvironmentName}-${ServiceName}-doc"
+
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [codedeploy.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-codedeploy-role
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: [codepipeline.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      RoleName: !Sub codepipeline-${EnvironmentName}-${ServiceName}-service-role
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
+      Policies:
+        -
+          PolicyName: codepipeline-base-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CWlogs
+                Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
+              - Sid: S3Artifacts
+                Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketLocation'
+                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
+              - Sid: ECSTasks
+                Effect: Allow
+                Action:
+                  - 'ecs:DescribeServices'
+                  - 'ecs:DescribeTaskDefinition'
+                  - 'ecs:DescribeTasks'
+                  - 'ecs:ListTasks'
+                  - 'ecs:RegisterTaskDefinition'
+                  - 'ecs:UpdateService'
+                Resource: "*"
+              - Sid: CodeBuildReports
+                Effect: Allow
+                Action:
+                  - 'codebuild:CreateReportGroup'
+                  - 'codebuild:CreateReport'
+                  - 'codebuild:UpdateReport'
+                  - 'codebuild:BatchPutTestCases'
+                  - 'codebuild:BatchPutCodeCoverages'
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:BatchGetBuilds'
+                Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${EnvironmentName}-*"
+
+Outputs:
+
+#####
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue contactsvc-ecs-task-role-arn
+#####
+
+  ECSTaskRoleArn:
+    Description: Export Value for the ECSTaskRole
+    Value: !GetAtt ECSTaskRole.Arn
+    Export:
+      Name: !Sub ${ServiceName}-ecs-task-role-arn
+      # arn:aws:iam::698195851833:role/dxhub-contactsvc-ecs-task-role
+
+  CodeBuildServiceRoleArn:
+    Description: Export Arn Value for the CodeBuild Service Role
+    Value: !GetAtt CodeBuildServiceRole.Arn
+    Export:
+      Name: !Sub ${ServiceName}-codebuild-service-role-arn
+      # arn:aws:iam::698195851833:role/codebuild-contactsvc-service-role
+
+  CodeDeployServiceRoleArn:
+    Description: Export Arn Value for the CodeDeploy Service Role
+    Value: !GetAtt CodeDeployServiceRole.Arn
+    Export:
+      Name: !Sub ${ServiceName}-codedeploy-service-role-arn
+      # arn:aws:iam::698195851833:role/AWSServiceForCodeDeploy2ECS
+
+  CodePipelineServiceRoleArn:
+    Description: Export Arn Value for the CodePipeline Service Role
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: !Sub ${ServiceName}-codepipeline-service-role-arn
+      # arn:aws:iam::698195851833:role/codepipeline-contactsvc-service-role
+

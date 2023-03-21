@@ -1,0 +1,252 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Codebuild projects & CodePipeline
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: contactsvc
+
+  DxhubCluster:
+    Description: The name of Dxhub Cluster
+    Type: String
+    # Default: dxhub
+
+  CodestarConnection:
+    Description: Connection to dxhub github
+    Type: String
+    # Default: arn:aws:codestar-connections:eu-west-1:115379056088:connection/5e6f0819-7a88-48a0-82b2-bc39b44a50ca
+
+  RepositoryName:
+    Type: String
+    Description: The GitHub Repo Name
+    # Default: infopark/dxhub
+
+  BranchName:
+    Type: String
+    Description: The GitHub Repo Name
+    # Default: neocrm-dev
+
+  S3ArtifactBucket:
+    Description: CodeBuild Service Role Arn
+    Type: String
+    # Default: codepipeline-eu-central-1-675644474011
+
+Resources:
+
+#####
+  # Modify the LogicalID (i.e. ContactServiceCodeBuild ) to a desired name and add the suffix with the expected value type (i.e. CodeBuild,CodeDeployApplication)
+  #
+#####
+
+  # 1. CodeBuild Projects
+
+  ContactServiceCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      BadgeEnabled: false
+      Description: !Sub "Build image for ${EnvironmentName}-${ServiceName}"
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
+      QueuedTimeoutInMinutes: 480
+      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Required
+      Source:
+        BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
+        Type: CODEPIPELINE
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName}
+      #   - Key: user:purpose
+      #     Value: deployment
+      TimeoutInMinutes: 60
+
+  # Use this notify Build if you need it otherwise comment it out
+
+  ContactServiceNotifyCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+        Name: notify
+      BadgeEnabled: false
+      Description: !Sub "Build image for ${EnvironmentName}-${ServiceName}-notify"
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      Cache:
+        Type: S3
+        Location: codepipeline-eu-west-2-0126153986/cache-deploy
+      Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
+      QueuedTimeoutInMinutes: 480
+      ServiceRole: !ImportValue CodeBuildServiceRoleArn
+      Source:
+        BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
+        Type: CODEPIPELINE
+        InsecureSsl: false
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName}
+      #   - Key: user:purpose
+      #     Value: deployment
+      TimeoutInMinutes: 60
+
+  # 2. CodeDeploy Applications
+
+  ContactServiceCodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
+      ComputePlatform: ECS
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName}
+      #   - Key: user:purpose
+      #     Value: deployment
+
+  # 3. CodeDeploy DeploymentGroups
+
+  ContactServiceCodeDeployGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref ContactServiceCodeDeployApplication  # Required
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_REQUEST
+      BlueGreenDeploymentConfiguration:
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+          WaitTimeInMinutes: 0
+        # GreenFleetProvisioningOption:
+        #   Action: DISCOVER_EXISTING
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 60
+      DeploymentGroupName: !Sub "DgpECS-${EnvironmentName}-${ServiceName}"
+      DeploymentStyle:
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+        DeploymentType: BLUE_GREEN
+      ECSServices:
+        - ClusterName: !Ref DxhubCluster
+          ServiceName: !ImportValue ECSServiceName
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - ProdTrafficRoute:
+              ListenerArns:
+                - !ImportValue ServiceProdListenerArn
+            TestTrafficRoute:
+              ListenerArns:
+                - !ImportValue ServiceTestListenerArn
+            TargetGroups:
+              - Name: !ImportValue ServiceTargetGroup1Name
+              - Name: !ImportValue ServiceTargetGroup2Name
+      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
+      # Tags:
+      #   - Key: user:project
+      #     Value: !Sub ${ServiceName1}
+      #   - Key: user:purpose
+      #     Value: deployment
+
+  # 4. CodePipeline
+
+  ContactServiceCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref S3ArtifactBucket
+        Type: S3
+      Name: !Sub "${EnvironmentName}-${ServiceName}"
+      RestartExecutionOnUpdate: false
+      RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
+      Stages: # Required
+        - Name: Source
+          Actions:
+            - Name: Source
+              Namespace: SourceVariables
+              ActionTypeId:
+                Owner: AWS
+                Category: Source
+                Version: "1"
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref CodestarConnection
+                FullRepositoryId: !Ref RepositoryName
+                BranchName: !Ref BranchName
+                DetectChanges: true
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref ContactServiceCodeBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Owner: AWS
+                Category: Deploy
+                Version: "1"
+                Provider: CodeDeployToECS
+              Configuration:
+                ApplicationName: !Ref ContactServiceCodeDeployApplication
+                DeploymentGroupName: !Ref ContactServiceCodeDeployGroup
+                TaskDefinitionTemplateArtifact: BuildArtifacts
+                AppSpecTemplateArtifact: BuildArtifacts
+                AppSpecTemplatePath: appspec.yaml
+                TaskDefinitionTemplatePath: taskdef.json
+                Image1ArtifactName: BuildArtifacts
+                Image1ContainerName: IMAGE
+              InputArtifacts:
+                - Name: BuildArtifacts
+              RunOrder: 1
+
+  # Use this last stage if your service pipeline has the notify build project
+
+        - Name: Notify
+          Actions:
+            - Name: Notify
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref ContactServiceNotifyCodeBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              # OutputArtifacts:
+              #   - Name: BuildArtifacts
+              RunOrder: 1
+
+# Outputs:

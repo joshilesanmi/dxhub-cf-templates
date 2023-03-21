@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AN ECS Cluster Template creating ECS Task Definition, ECS Service and CloudWatch groups
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    # Default: contactsvc
+
+  ContainerName:
+    Description: The name of the Container
+    Type: String
+    # Default: webworker
+
+  DxhubCluster:
+    Description: The name of Dxhub Cluster
+    Type: String
+    # Default: dxhub
+
+  PublicSubnet1a:
+    Description: Dxhub PublicSubnet1a
+    Type: String
+    # Default: subnet-04ef6dbeac6590347
+
+  PublicSubnet1b:
+    Description: Dxhub PublicSubnet1b
+    Type: String
+    # Default: subnet-0d6515159c1192fc0
+
+  PublicSubnet1c:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    # Default: subnet-098a6dc7ffbd55c5e
+
+  # PrivateSubnet1a:
+  #   Description: Dxhub PrivateSubnet1a
+  #   Type: String
+  #   # Default: subnet-0250df016f025d304
+
+  # PrivateSubnet1b:
+  #   Description: Dxhub PrivateSubnet1b
+  #   Type: String
+  #   # Default: subnet-09f41e2ac8f83f639
+
+  # PrivateSubnet1c:
+  #   Description: Dxhub PrivateSubnet1b
+  #   Type: String
+  #   # Default: subnet-07260c658f4c2a3eb
+
+  DynamodbInstance:
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+
+  HoneyBagerkey:
+      Description: HoneyBagerkey from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
+
+  JRapi:
+      Description: JRapi from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
+
+Resources:
+
+#####
+  # Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb,
+#####
+
+  # 1. ECR Repositories
+
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${ServiceName}
+
+  # 2. Task Definition
+
+  ServiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Memory: 128
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
+          PortMappings:
+            - ContainerPort: 8081
+              Protocol: tcp
+              HostPort: 8081
+          Command:
+            - "/contactsvc"
+            - "webworker"
+            - "--http-addr"
+            - ":8081"
+          Secrets:
+            - Name: DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+              ValueFrom: !Ref DynamodbInstance
+            - Name: HONEYBADGER_API_KEY
+              ValueFrom: !Ref HoneyBagerkey
+            - Name: JR_API_URL
+              ValueFrom: !Ref JRapi
+          Environment:
+            - Name: AWS_XRAY_CONTEXT_MISSING
+              Value: LOG_ERROR
+            - Name: HONEYBADGER_ENV
+              Value: production
+          HealthCheck:
+            Command:
+              -  "CMD-SHELL"
+              - "curl http://127.0.0.1:8081/health_check || exit 1"
+            Interval: 5
+            Retries: 3
+            StartPeriod: 0
+            Timeout: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: /aws/ecs/dxhub
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${ServiceName}
+        - Name: xray-daemon
+          Cpu: 32
+          Memory: 128
+          Image: amazon/aws-xray-daemon
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+              HostPort: 2000
+          HealthCheck:
+            Command:
+              - "CMD-SHELL"
+              - "/xray --version || exit 1"
+            Interval: 5
+            Retries: 3
+            StartPeriod: 0
+            Timeout: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: true
+              awslogs-group: /aws/ecs/dxhub
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub ${ServiceName}-xray
+      Cpu: .5vCPU
+      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn # Change Expected
+      Family: !Sub ${EnvironmentName}-${ServiceName}
+      Memory: 1GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+        - EC2
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
+      TaskRoleArn: !ImportValue ECSTaskRoleArn # Change Expected
+
+  # 3. Service
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref DxhubCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 75
+      DeploymentController:
+        Type: CODE_DEPLOY
+      DesiredCount: 0
+      EnableECSManagedTags: false
+      EnableExecuteCommand: true
+      # HealthCheckGracePeriodSeconds: Number
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: !Ref ContainerName
+          ContainerPort: 8081
+          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn # Change Expected
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 8081
+          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn # Change Expected
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !ImportValue ServiceSecurityGroup # Change Expected
+          Subnets: # Change Expected if Service is in another subnet
+            - !Ref PublicSubnet1a
+            - !Ref PublicSubnet1b
+            - !Ref PublicSubnet1c
+      # PlatformVersion: "String"
+      PropagateTags: TASK_DEFINITION
+      SchedulingStrategy: REPLICA
+      ServiceName: !Sub ${ServiceName}
+      TaskDefinition: !Ref ServiceTaskDefinition
+
+
+Outputs:
+
+#####
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue neocrm-ecs-service
+#####
+
+
+  ECSServiceName:
+    Description: Export for the ECSService
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: !Sub ${ServiceName}-ecs-service
