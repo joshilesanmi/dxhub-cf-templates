@@ -200,13 +200,13 @@ Outputs:
     Description: The export name for ServiceTargetGroup1
     Value: !GetAtt ServiceTargetGroup1.TargetGroupName
     Export:
-      Name: !Sub ${ServiceName}-tg-1-name # contactsvc-target-group-1-name
+      Name: !Sub ${ServiceName}-tg-1-name # contactsvc-tg-1-name
 
   ServiceTargetGroup1Arn:
     Description: The export arn for ServiceTargetGroup1
     Value: !Ref ServiceTargetGroup1
     Export:
-      Name: !Sub ${ServiceName}-tg-1-arn # contactsvc-target-group-1-arn
+      Name: !Sub ${ServiceName}-tg-1-arn # contactsvc-tg-1-arn
 
   ServiceTargetGroup2Name:
     Description: The export name for ServiceTargetGroup2

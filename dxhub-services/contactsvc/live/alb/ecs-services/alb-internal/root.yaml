@@ -75,4 +75,5 @@ Resources:
         # PrivateSubnet1a: !Ref PrivateSubnet1a
         # PrivateSubnet1b: !Ref PrivateSubnet1b
         # PrivateSubnet1c: !Ref PrivateSubnet1c
+        AlbInternalSg: !Ref AlbInternalSg
       TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/alb/internet-facing/alb.yaml
