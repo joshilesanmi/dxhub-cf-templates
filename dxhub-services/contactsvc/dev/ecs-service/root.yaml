@@ -18,25 +18,25 @@ Parameters:
     Type: String
     Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
-  DBHost:
-    Description: DbHost from Parameter Store for the container
-    Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
+  # DBHost:
+  #   Description: DbHost from Parameter Store for the container
+  #   Type: String
+  #   Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
 
-  DBName:
-    Description: DbHost from Parameter Store for the container
-    Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+  # DBName:
+  #   Description: DbHost from Parameter Store for the container
+  #   Type: String
+  #   Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
 
-  DBUsername:
-    Description: Db username from Parameter Store for the container
-    Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+  # DBUsername:
+  #   Description: Db username from Parameter Store for the container
+  #   Type: String
+  #   Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
 
-  DBPassword:
-    Description: Db password from Parameter Store for the container
-    Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+  # DBPassword:
+  #   Description: Db password from Parameter Store for the container
+  #   Type: String
+  #   Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
 
 Resources:
 
@@ -47,8 +47,8 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
         HoneyBagerkey: !Ref HoneyBagerkey
-        DBHost: !Ref DBHost
-        DBName: !Ref DBName
-        DBUsername: !Ref DBUsername
-        DBPassword: !Ref DBPassword
+        # DBHost: !Ref DBHost
+        # DBName: !Ref DBName
+        # DBUsername: !Ref DBUsername
+        # DBPassword: !Ref DBPassword
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/contactsvc/ecs-service/nested-ecs.yaml

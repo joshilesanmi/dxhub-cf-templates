@@ -66,7 +66,9 @@ Resources:
                   - 'ssm:Describe*'
                   - 'ssm:Get*'
                   - 'ssm:List*'
-                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}/*"
+                Resource: 
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}/*"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}-*/*"
               # Allow the executioner to use a kms key
               - Sid: KmsUse
                 Effect: Allow
@@ -79,7 +81,8 @@ Resources:
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${EnvironmentName}/*"
+                Resource: 
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${EnvironmentName}/*"
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-service-task-execution

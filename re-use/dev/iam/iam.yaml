@@ -41,7 +41,7 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-task-role
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}
       Path: /
       AssumeRolePolicyDocument:
         Statement:

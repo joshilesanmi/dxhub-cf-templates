@@ -18,25 +18,25 @@ Parameters:
     Type: String
     # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
-  DBHost:
-    Description: Db Host from Parameter Store for the container
-    Type: String
-    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
+  # DBHost:
+  #   Description: Db Host from Parameter Store for the container
+  #   Type: String
+  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
 
-  DBName:
-    Description: Db Name from Parameter Store for the container
-    Type: String
-    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+  # DBName:
+  #   Description: Db Name from Parameter Store for the container
+  #   Type: String
+  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
 
-  DBUsername:
-    Description: Db username from Parameter Store for the container
-    Type: String
-    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+  # DBUsername:
+  #   Description: Db username from Parameter Store for the container
+  #   Type: String
+  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
 
-  DBPassword:
-    Description: Db password from Parameter Store for the container
-    Type: String
-    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+  # DBPassword:
+  #   Description: Db password from Parameter Store for the container
+  #   Type: String
+  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
 
 Resources:
 
@@ -72,14 +72,14 @@ Resources:
           Secrets:
             - Name: HONEYBADGER_API_KEY
               ValueFrom: !Ref HoneyBagerkey
-            - Name: POSTGRES_DATABASE
-              ValueFrom: !Ref DBName
-            - Name: POSTGRES_HOST
-              ValueFrom: !Ref DBHost
-            - Name: POSTGRES_USERNAME
-              ValueFrom: !Ref DBUsername
-            - Name: POSTGRES_PASSWORD
-              ValueFrom: !Ref DBPassword
+            # - Name: POSTGRES_DATABASE
+            #   ValueFrom: !Ref DBName
+            # - Name: POSTGRES_HOST
+            #   ValueFrom: !Ref DBHost
+            # - Name: POSTGRES_USERNAME
+            #   ValueFrom: !Ref DBUsername
+            # - Name: POSTGRES_PASSWORD
+            #   ValueFrom: !Ref DBPassword
           Environment:
             - Name: AWS_XRAY_CONTEXT_MISSING
               Value: LOG_ERROR
@@ -136,7 +136,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn
+      TaskRoleArn: !ImportValue contactsvc-ecs-task-role-arn 
 
   # 3. Service
 

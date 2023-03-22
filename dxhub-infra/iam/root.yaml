@@ -24,4 +24,4 @@ Resources:
         # AccountId: !Ref AccountId
         # Region: !Ref Region
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/iam.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/neocrm-api/iam.yaml

@@ -34,12 +34,14 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 21
       HealthCheckPath: /grpc.health.v1.Health/Check
+      HealthCheckPort: traffic-port
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 20
       HealthyThresholdCount: 4
       Name: !Sub ${EnvironmentName}-${ServiceName}-1
       Port: 8101
       Protocol: HTTP
+      ProtocolVersion: GRPC
       Tags:
        - Key: user:environment
          Value: development
@@ -54,12 +56,14 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 21
       HealthCheckPath: /grpc.health.v1.Health/Check
+      HealthCheckPort: traffic-port
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 20
       HealthyThresholdCount: 4
       Name: !Sub ${EnvironmentName}-${ServiceName}-2
       Port: 8101
       Protocol: HTTP
+      ProtocolVersion: GRPC
       Tags:
         - Key: user:environment
           Value: development
