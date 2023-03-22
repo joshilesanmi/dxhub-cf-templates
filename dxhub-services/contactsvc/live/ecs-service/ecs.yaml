@@ -97,7 +97,7 @@ Resources:
           Command:
             - "/contactsvc"
             - "webworker"
-            - "--http-addr"
+            - "--grpc-addr"
             - ":8081"
           Secrets:
             - Name: HONEYBADGER_API_KEY
