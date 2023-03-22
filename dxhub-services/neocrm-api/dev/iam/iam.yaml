@@ -261,12 +261,12 @@ Outputs:
     Description: Export Value for the ECSTaskRole
     Value: !GetAtt ECSTaskRole.Arn
     Export:
-      Name: !Sub ${EnvironmentName}-${ServiceName}
+      Name: !Sub ${EnvironmentName}-${ServiceName}-arn
       # arn:aws:iam::698195851833:role/dxhub-neocrm-api
 
   CodeBuildServiceRoleArn:
     Description: Export Arn Value for the CodeBuild Service Role
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
-      Name: !Sub ${ServiceName}-codebuild-service-role-arn
+      Name: !Sub codebuild-${ServiceName}-service-role-arn
       # arn:aws:iam::698195851833:role/codebuild-neocrm-api-service-role

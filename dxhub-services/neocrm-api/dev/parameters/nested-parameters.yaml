@@ -8,61 +8,86 @@ Parameters:
     Type: String
     # Default: dxhub
 
-  ServiceName:
-    Description: The name of first service
-    Type: String
-    # Default: contactsvc
-
 Resources:
 
-  DBHost:
+  DynamoDbInstanceTable:
     Type: AWS::SSM::Parameter
     Properties:
       DataType: text
-      Description: PostgreSql Endpoint
-      Name: !Sub /${EnvironmentName}/${ServiceName}/POSTGRESQL_HOST
+      Description: Dynamo DB Instance table name
+      Name: !Sub /${EnvironmentName}/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
       Tier: Standard
       Type: String
-      Value: dxhub.cluster-cee8lvtdmj2y.eu-west-2.rds.amazonaws.com
+      Value: jr-instance-configuration
 
-  DBName:
+  JRApiUrl:
     Type: AWS::SSM::Parameter
     Properties:
       DataType: text
-      Description: PostgreSql db name
-      Name: !Sub /${EnvironmentName}/${ServiceName}/POSTGRESQL_DATABASE
+      Description: Jr Api Url
+      Name: !Sub /${EnvironmentName}/JR_API_URL
       Tier: Standard
       Type: String
-      Value: !Ref EnvironmentName
+      Value: https://api.justrelate.com
 
-  DBUserName:
+  DockerHubLogin:
     Type: AWS::SSM::Parameter
     Properties:
       DataType: text
-      Description: PostgreSql db name
-      Name: !Sub /${EnvironmentName}/${ServiceName}/POSTGRESQL_USERNAME
+      Description: Docker Hub login
+      Name: !Sub /${EnvironmentName}/CodeBuild/DOCKER_HUB_LOGIN
       Tier: Standard
       Type: String
-      Value: !Ref ServiceName
+      Value: infoparkdev
+
+  AccountID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: AccountID for aws
+      Name: !Sub /${EnvironmentName}/ACCOUNT_ID
+      Tier: Standard
+      Type: String
+      Value: "012615398682"
+
+  Region:
+    Type: AWS::SSM::Parameter
+    Properties:
+      DataType: text
+      Description: Region for neocrm-api
+      Name: !Sub /${EnvironmentName}/REGION
+      Tier: Standard
+      Type: String
+      Value: eu-west-2
 
 Outputs:
 
-  DBHostName:
-    Description: The parameter name for DBHost
-    Value: !Ref DBHost
+  DynamoDbInstanceTableName:
+    Description: The parameter name for DynamoDbInstanceTable
+    Value: !Ref DynamoDbInstanceTable
     Export:
-      Name: DBHostName
+      Name: DynamoDbInstanceTableName
 
-  DBName:
-    Description: The parameter name for DBName
-    Value: !Ref DBName
+  JRApiUrlName:
+    Description: The parameter name for JRApiUrl
+    Value: !Ref JRApiUrl
     Export:
-      Name: DBName
+      Name: JRApiUrlName
 
-  DBUserName:
-    Description: The parameter name for DBUserName
-    Value: !Ref DBUserName
+  DockerHubLoginName:
+    Description: The parameter name for DockerHubLogin
+    Value: !Ref DockerHubLogin
     Export:
-      Name: DBUserName
+      Name: DockerHubLoginName
 
-  
+  AccountIDName:
+    Description: The parameter name for AccountID
+    Value: !Ref AccountID
+    Export:
+      Name: AccountIDName
+
+  RegionName:
+    Description: The parameter name for Region
+    Value: !Ref Region
+    Export:
+      Name: RegionName

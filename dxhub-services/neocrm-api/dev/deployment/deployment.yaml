@@ -52,7 +52,7 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue codebuild-neocrm-api-service-role # Required
+      ServiceRole: !ImportValue codebuild-neocrm-api-service-role-arn # Required
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -87,7 +87,7 @@ Resources:
       #     StreamName: 
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue codebuild-neocrm-api-service-role
+      ServiceRole: !ImportValue codebuild-neocrm-api-service-role-arn
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -150,7 +150,7 @@ Resources:
             TargetGroups:
               - Name: !ImportValue neocrm-api-tg-1-name
               - Name: !ImportValue neocrm-api-tg-2-name
-      ServiceRoleArn: !ImportValue dxhub-codedeploy-service-role # Required
+      ServiceRoleArn: !ImportValue dxhub-codedeploy-service-role-arn # Required
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -167,7 +167,7 @@ Resources:
         Type: S3
       Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue dxhub-codepipeline-service-role # Required
+      RoleArn: !ImportValue dxhub-codepipeline-service-role-arn # Required
       Stages: # Required
         - Name: Source
           Actions:

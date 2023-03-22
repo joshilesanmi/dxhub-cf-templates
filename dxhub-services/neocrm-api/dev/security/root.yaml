@@ -10,7 +10,7 @@ Parameters:
   ServiceName:
     Description: The Service name
     Type: String
-    Default: contactsvc
+    Default: neocrm-api
 
 Resources:
 
@@ -20,4 +20,4 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/neocrm-api/security/nested-security.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/neocrm-api/security/security.yaml

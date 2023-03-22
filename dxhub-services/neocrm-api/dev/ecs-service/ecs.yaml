@@ -107,8 +107,8 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue dxhub-service-task-execution-role
-      Family: !Sub ${ServiceName}
+      ExecutionRoleArn: !ImportValue dxhub-task-execution-role-arn
+      Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -117,11 +117,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue dxhub-neocrm-api
+      TaskRoleArn: !ImportValue dxhub-neocrm-api-arn
 
-  
-
-  # 5. Service
+  # 3. Service
 
   ECSService:
     Type: AWS::ECS::Service

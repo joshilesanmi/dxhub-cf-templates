@@ -46,7 +46,7 @@ Resources:
         Version: "2012-10-17"
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
-      RoleName: !Sub ${EnvironmentName}-service-task-execution
+      RoleName: !Sub ${EnvironmentName}-service-task-execution-role
       Path: /
       Policies:
         -
@@ -260,7 +260,7 @@ Outputs:
     Description: Export value for the ECSTaskExecutionRole
     Value: !GetAtt ECSTaskExecutionRole.Arn
     Export:
-      Name: !Sub ${EnvironmentName}-task-execution
+      Name: !Sub ${EnvironmentName}-task-execution-role-arn
       # arn:aws:iam::xxxx:role/dxhub-service-task-execution-role
 
   CodeDeployServiceRoleArn:

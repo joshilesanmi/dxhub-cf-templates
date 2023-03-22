@@ -9,11 +9,6 @@ Parameters:
     Type: String
     # Default: dxhub
 
-  ServiceName:
-    Description: The Service name
-    Type: String
-    # Default: neocrm-api
-
   CodeDeploy:
     Description: The Service name
     Type: String
@@ -28,44 +23,6 @@ Resources:
   # If you want to make direct requests to a container using its
   # public IP address you'll need to add a security group rule
   # to allow traffic from all IP addresses.
-
-  ServiceSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: !Sub ${EnvironmentName}-${ServiceName}-sg
-      GroupDescription: !Sub Access to the ${ServiceName} containers
-      VpcId: !ImportValue VpcId
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-${ServiceName}-sg
-
-  ServiceSecurityGroupIngressFromPublicALB:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from other containers in the same security group
-      GroupId: !Ref ServiceSecurityGroup
-      IpProtocol: -1
-      SourceSecurityGroupId: !Ref ServiceSecurityGroup
-
-  ServiceIngressRule1:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from the CodeDeployLifeCyleSG
-      GroupId: !Ref ServiceSecurityGroup
-      IpProtocol: tcp
-      FromPort: 8081
-      ToPort: 8081
-      SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
-
-  ServiceIngressRule2:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from the PublicLoadBalancerSG
-      GroupId: !Ref ServiceSecurityGroup
-      IpProtocol: tcp
-      FromPort: 8081
-      ToPort: 8081
-      SourceSecurityGroupId: !Ref PublicLoadBalancerSG
 
   CodeDeployLifeCyleSG:
     Type: AWS::EC2::SecurityGroup
@@ -191,12 +148,6 @@ Resources:
       SourceSecurityGroupId: !Ref CodeDeployLifeCyleSG
 
 Outputs:
-
-  ServiceSecurityGroup:
-    Description: A security group for Service
-    Value: !Ref ServiceSecurityGroup
-    Export:
-      Name: ServiceSecurityGroup
 
   CodeDeployLifeCyleSG:
     Description: A security group for CodeDeployLifeCyle

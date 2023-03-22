@@ -78,7 +78,7 @@ Resources:
     Properties:
       Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internet-facing
-      SecurityGroups: [!ImportValue InternalAlbSG]
+      SecurityGroups: [!ImportValue PublicLoadBalancerSG]
       Subnets:
         - !ImportValue PublicSubnet1a
         - !ImportValue PublicSubnet1b

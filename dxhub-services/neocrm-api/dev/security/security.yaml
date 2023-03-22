@@ -46,7 +46,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 8081
       ToPort: 8081
-      SourceSecurityGroupId: !ImportValue PublicALBSG
+      SourceSecurityGroupId: !ImportValue PublicLoadBalancerSG
 
   # # Add this security group - ingress rule if your service is not publicly accessible - ( internally accessible in vpc )
 

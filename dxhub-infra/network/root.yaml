@@ -7,11 +7,6 @@ Parameters:
     Type: String
     Default: dxhub
 
-  ServiceName:
-    Description: The Service name
-    Type: String
-    Default: neocrm-api
-
   CodeDeploy:
     Description: The Service name
     Type: String
@@ -93,7 +88,6 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-        ServiceName: !Ref ServiceName
         CodeDeploy: !Ref CodeDeploy
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/network/security.yaml
 
