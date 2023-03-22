@@ -48,6 +48,11 @@ Parameters:
   #   Type: String
   #   # Default: subnet-07260c658f4c2a3eb
 
+  AlbInternalSg:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    # Default: sg-088007583ceeaf250
+
   Certificate:
     Description: The Certificate for the listeners
     Type: String
@@ -115,7 +120,7 @@ Resources:
     Properties:
       Name: !Sub ${EnvironmentName}-${ServiceName}
       Scheme: internal
-      SecurityGroups: [!ImportValue ServiceSecurityGroup]
+      SecurityGroups: [!Ref AlbInternalSg]
       Subnets:
         - !Ref PublicSubnet1a
         - !Ref PublicSubnet1b
@@ -195,13 +200,13 @@ Outputs:
     Description: The export name for ServiceTargetGroup1
     Value: !GetAtt ServiceTargetGroup1.TargetGroupName
     Export:
-      Name: !Sub ${ServiceName}-tg-1-name # contactsvc-target-group-1-name
+      Name: !Sub ${ServiceName}-tg-1-name # contactsvc-tg-1-name
 
   ServiceTargetGroup1Arn:
     Description: The export arn for ServiceTargetGroup1
     Value: !Ref ServiceTargetGroup1
     Export:
-      Name: !Sub ${ServiceName}-tg-1-arn # contactsvc-target-group-1-arn
+      Name: !Sub ${ServiceName}-tg-1-arn # contactsvc-tg-1-arn
 
   ServiceTargetGroup2Name:
     Description: The export name for ServiceTargetGroup2

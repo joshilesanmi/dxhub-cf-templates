@@ -54,6 +54,11 @@ Parameters:
   #   Type: String
   #   Default: subnet-07260c658f4c2a3eb
 
+  AlbSg:
+    Description: Dxhub PublicSubnet1c
+    Type: String
+    Default: sg-088007583ceeaf250
+
 Resources:
 
   nestedALB:

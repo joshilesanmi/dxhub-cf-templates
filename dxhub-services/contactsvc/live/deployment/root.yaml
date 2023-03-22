@@ -32,13 +32,12 @@ Parameters:
   BranchName:
     Type: String
     Description: The GitHub Repo Name
-    Default: neocrm-dev
+    Default: main
 
   S3ArtifactBucket:
     Description: CodeBuild Service Role Arn
     Type: String
     Default: codepipeline-eu-central-1-675644474011
-
 
 Resources:
 

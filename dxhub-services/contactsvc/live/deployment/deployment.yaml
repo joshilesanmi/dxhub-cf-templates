@@ -62,7 +62,7 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Required
+      ServiceRole: !ImportValue contactsvc-codebuild-service-role-arn # Required
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -89,12 +89,12 @@ Resources:
         ImagePullCredentialsType: CODEBUILD
         PrivilegedMode: true
         Type: LINUX_CONTAINER
-      Cache:
-        Type: S3
-        Location: codepipeline-eu-west-2-0126153986/cache-deploy
+      # Cache:
+      #   Type: S3
+      #   Location: codepipeline-eu-central-1-0126153986/cache-deploy # Change needed
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildServiceRoleArn
+      ServiceRole: !ImportValue contactsvc-codebuild-service-role-arn
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -145,19 +145,19 @@ Resources:
         DeploymentType: BLUE_GREEN
       ECSServices:
         - ClusterName: !Ref DxhubCluster
-          ServiceName: !ImportValue ECSServiceName
+          ServiceName: !ImportValue contactsvc-ecs-service
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceProdListenerArn
+                - !ImportValue contactsvc-prod-listener-arn
             TestTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceTestListenerArn
+                - !ImportValue contactsvc-test-listener-arn
             TargetGroups:
-              - Name: !ImportValue ServiceTargetGroup1Name
-              - Name: !ImportValue ServiceTargetGroup2Name
-      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
+              - Name: !ImportValue contactsvc-tg-1-name
+              - Name: !ImportValue contactsvc-tg-2-name
+      ServiceRoleArn: !ImportValue contactsvc-codedeploy-service-role-arn # Required
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -174,7 +174,7 @@ Resources:
         Type: S3
       Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
+      RoleArn: !ImportValue contactsvc-codepipeline-service-role-arn # Required
       Stages: # Required
         - Name: Source
           Actions:

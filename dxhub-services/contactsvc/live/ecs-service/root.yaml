@@ -53,11 +53,6 @@ Parameters:
   #   Type: String
   #   Default: subnet-07260c658f4c2a3eb
 
-  DynamodbInstance:
-    Description: DbHost from Parameter Store for the container
-    Type: String
-    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
-
   HoneyBagerkey:
     Description: HoneyBadger from Parameter Store for the container
     Type: String
@@ -67,6 +62,11 @@ Parameters:
     Description: JRapi from Parameter Store for the container
     Type: String
     Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/JR_API_URL
+
+  ECSTaskExecutionRole:
+      Description: JRapi from Parameter Store for the container
+      Type: String
+      Default: arn:aws:iam::115379056088:role/dxhub-service-task-execution
 
 Resources:
 
@@ -81,8 +81,8 @@ Resources:
         PublicSubnet1a: !Ref PublicSubnet1a
         PublicSubnet1b: !Ref PublicSubnet1b
         PublicSubnet1c: !Ref PublicSubnet1c
-        DynamodbInstance: !Ref DynamodbInstance
         HoneyBagerkey: !Ref HoneyBagerkey
         JRapi: !Ref JRapi
+        ECSTaskExecutionRole: !Ref ECSTaskExecutionRole
       TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/ecs-service/ecs.yaml
 

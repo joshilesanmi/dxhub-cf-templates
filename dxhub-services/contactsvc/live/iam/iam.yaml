@@ -70,21 +70,6 @@ Resources:
                   - kms:DescribeKey
                 Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/jr-configuration-key"
         -
-          PolicyName: read-jr-instance-configuration
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: UseSSMKey
-                Effect: "Allow"
-                Action:
-                  - dynamodb:BatchGetItem
-                  - dynamodb:DescribeTable
-                  - dynamodb:GetItem
-                  - dynamodb:ListTables
-                  - dynamodb:Query
-                  - dynamodb:Scan
-                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/jr-instance-configuration"
-        -
           PolicyName: ssm-channel-handling
           PolicyDocument:
             Version: "2012-10-17"
