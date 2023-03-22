@@ -111,8 +111,8 @@ Resources:
               Value: production
           HealthCheck:
             Command:
-              -  "CMD-SHELL"
-              - "curl http://127.0.0.1:8081/health_check || exit 1"
+              - "CMD-SHELL"
+              - "curl http://127.0.0.1:8081/grpc.health.v1.Health/Check || exit 1"
             Interval: 5
             Retries: 3
             StartPeriod: 0
