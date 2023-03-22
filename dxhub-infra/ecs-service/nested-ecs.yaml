@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AN ECS Cluster Template creating ECS Task Definition, ECS Service and CloudWatch groups
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Stack Name for naming the resources
+    Type: String
+    # Default: dxhub
+
+Resources:
+
+  # 1. ECS Clusters
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      CapacityProviders:
+        - FARGATE
+      ClusterName: !Ref EnvironmentName
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}
+
+  # 2. Cloud Watch Logs
+
+  ECSClusterCloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 30
+      LogGroupName: !Sub "/aws/ecs/${ECSCluster}"
+
+Outputs:
+
+  ECSCluster:
+    Description: The name of the ServiceCluster1
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub ${EnvironmentName}-cluster

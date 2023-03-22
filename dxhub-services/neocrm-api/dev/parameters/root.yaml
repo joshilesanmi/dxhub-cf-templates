@@ -8,6 +8,11 @@ Parameters:
     Type: String
     Default: dxhub
 
+  ServiceName:
+    Description: The name of first service
+    Type: String
+    Default: contactsvc
+
 Resources:
 
   nestedECS:
@@ -15,6 +20,7 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/parameters/parameters.yaml
+        ServiceName: !Ref ServiceName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/ecs-service/contactsvc/parameters/nested-parameters.yaml
 
 # Outputs:

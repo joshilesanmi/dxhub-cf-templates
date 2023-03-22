@@ -1,6 +1,5 @@
-# S3 URL for root - https://trox-cf-templates.s3.eu-central-1.amazonaws.com/test/alb/root.yaml
-
 AWSTemplateFormatVersion: 2010-09-09
+Description: AN ECS Cluster Template creating ECS Task Definition, ECS Service and CloudWatch groups
 
 Parameters:
 
@@ -11,11 +10,9 @@ Parameters:
 
 Resources:
 
-  nestedALB:
+  nestedECS:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/alb/alb.yaml
-
-  
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/ecs-service/nested-ecs.yaml

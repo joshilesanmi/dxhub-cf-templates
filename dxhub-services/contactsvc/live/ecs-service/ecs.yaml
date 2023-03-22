@@ -112,7 +112,7 @@ Resources:
           HealthCheck:
             Command:
               - "CMD-SHELL"
-              - "curl http://127.0.0.1:8081/grpc.health.v1.Health/Check || exit 1"
+              - "curl http://127.0.0.1:8081/bin/grpc_health_probe || exit 1"
             Interval: 5
             Retries: 3
             StartPeriod: 0

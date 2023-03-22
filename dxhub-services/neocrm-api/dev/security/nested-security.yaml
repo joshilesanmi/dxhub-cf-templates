@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Template for the security groups: FargateContainer - SecurityGroups
+
+Parameters:
+
+  EnvironmentName:
+    Description: An Environment Name to name the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The Service name
+    Type: String
+    # Default: neocrm-api
+
+Resources:
+
+  # A security group for the containers we will run in Fargate.
+
+  ServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-${ServiceName}-sg
+      GroupDescription: !Sub Access to the ${ServiceName} containers
+      VpcId: !ImportValue VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-${ServiceName}-sg
+
+  ServiceSecurityGroupIngressFromFargate:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from other containers in the same security group
+      GroupId: !Ref ServiceSecurityGroup
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref ServiceSecurityGroup
+
+  # Add this security group - ingress rule if your service is publicly accessible - ( externally accessible )
+
+  ServiceIngressRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the PublicLoadBalancerSG
+      GroupId: !Ref ServiceSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8081
+      ToPort: 8081
+      SourceSecurityGroupId: !ImportValue PublicALBSG
+
+  # # Add this security group - ingress rule if your service is not publicly accessible - ( internally accessible in vpc )
+
+  # ServiceIngressRule1:
+  #   Type: AWS::EC2::SecurityGroupIngress
+  #   Properties:
+  #     Description: Ingress from the InternalAlbSG
+  #     GroupId: !Ref ServiceSecurityGroup
+  #     IpProtocol: tcp
+  #     FromPort: 8101
+  #     ToPort: 8101
+  #     SourceSecurityGroupId: !ImportValue InternalAlbSG
+
+
+Outputs:
+
+#####
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
+
+  ServiceSecurityGroup:
+    Description: A security group for Service
+    Value: !Ref ServiceSecurityGroup
+    Export:
+      Name: !Sub ${ServiceName}-sg # neocrm-api-sg

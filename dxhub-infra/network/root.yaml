@@ -84,7 +84,7 @@ Resources:
         RDSSubnet1aCidrBlock: !Ref RDSSubnet1aCidrBlock
         RDSSubnet1bCidrBlock: !Ref RDSSubnet1bCidrBlock
         RDSSubnet1cCidrBlock: !Ref RDSSubnet1cCidrBlock
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/dxhub/network.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/network/network.yaml
   
   nestedSecurity:
     Type: AWS::CloudFormation::Stack
@@ -95,7 +95,7 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
         CodeDeploy: !Ref CodeDeploy
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/dxhub/security.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/network/security.yaml
 
   nestedEndpoints:
     Type: AWS::CloudFormation::Stack
@@ -105,4 +105,4 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/network/dxhub/endpoints.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/network/endpoints.yaml

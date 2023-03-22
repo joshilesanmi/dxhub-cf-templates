@@ -11,38 +11,24 @@ Parameters:
   ServiceName:
     Description: The name of first service
     Type: String
-    # Default: contactsvc
+    # Default: neocrm-api
+
+  DynamodbInstance:
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
 
   HoneyBagerkey:
-    Description: DbHost from Parameter Store for the container
-    Type: String
-    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
-  # DBHost:
-  #   Description: Db Host from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
-
-  # DBName:
-  #   Description: Db Name from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
-
-  # DBUsername:
-  #   Description: Db username from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
-
-  # DBPassword:
-  #   Description: Db password from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+  JRapi:
+      Description: DbHost from Parameter Store for the container
+      Type: String
+      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
 
 Resources:
-
-#####
-# Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb,
-#####
 
   # 1. ECR Repositories
 
@@ -60,38 +46,32 @@ Resources:
         - Name: !Ref ServiceName
           Memory: 128
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
+          # 012615398682.dkr.ecr.eu-west-2.amazonaws.com/dxhub-neocrm-api:latest
           PortMappings:
-            - ContainerPort: 8101
+            - ContainerPort: 8081
               Protocol: tcp
-              HostPort: 8101
+              HostPort: 8081
           Command:
-            - "/contactsvc"
+            - "/neocrm-api"
             - "webworker"
-            - "--grpc-addr"
+            - "--http-addr"
             - ":8081"
           Secrets:
+            - Name: DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+              ValueFrom: !Ref DynamodbInstance
             - Name: HONEYBADGER_API_KEY
               ValueFrom: !Ref HoneyBagerkey
-            # - Name: POSTGRES_DATABASE
-            #   ValueFrom: !Ref DBName
-            # - Name: POSTGRES_HOST
-            #   ValueFrom: !Ref DBHost
-            # - Name: POSTGRES_USERNAME
-            #   ValueFrom: !Ref DBUsername
-            # - Name: POSTGRES_PASSWORD
-            #   ValueFrom: !Ref DBPassword
+            - Name: JR_API_URL
+              ValueFrom: !Ref JRapi
           Environment:
             - Name: AWS_XRAY_CONTEXT_MISSING
               Value: LOG_ERROR
             - Name: HONEYBADGER_ENV
               Value: production
-            - Name: POSTGRES_PORT
-              Value: "5432"
           HealthCheck:
             Command:
-              - "/bin/grpc_health_probe"
-              - "-addr=:8101"
-              # /grpc.health.v1.Health/Check --> target group healthcheck
+              -  "CMD-SHELL"
+              - "curl http://127.0.0.1:8081/health_check || exit 1"
             Interval: 5
             Retries: 3
             StartPeriod: 0
@@ -127,8 +107,8 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn
-      Family: !Sub ${EnvironmentName}-${ServiceName}
+      ExecutionRoleArn: !ImportValue dxhub-service-task-execution-role
+      Family: !Sub ${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -137,14 +117,16 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn
+      TaskRoleArn: !ImportValue dxhub-neocrm-api
 
-  # 3. Service
+  
+
+  # 5. Service
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !ImportValue ECSCluster
+      Cluster: !ImportValue dxhub-cluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -157,16 +139,16 @@ Resources:
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: !Ref ServiceName
-          ContainerPort: 8101
-          TargetGroupArn: !ImportValue contactsvc-target-group-1-arn
+          ContainerPort: 8081
+          TargetGroupArn: !ImportValue neocrm-api-tg-1-arn
         - ContainerName: !Ref ServiceName
-          ContainerPort: 8101
-          TargetGroupArn: !ImportValue contactsvc-target-group-2-arn
+          ContainerPort: 8081
+          TargetGroupArn: !ImportValue neocrm-api-tg-2-arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !ImportValue conactsvc-security-group
+            - !ImportValue neocrm-api-sg
           Subnets:
             - !ImportValue PublicSubnet1a
             - !ImportValue PublicSubnet1b
@@ -177,14 +159,11 @@ Resources:
       ServiceName: !Sub ${ServiceName}
       TaskDefinition: !Ref ServiceTaskDefinition
 
-Outputs:
 
-#####
-# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
-#####
+Outputs:
 
   ECSServiceName:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: contactsvc-ecs-name
+      Name: !Sub ${ServiceName}-ecs-service

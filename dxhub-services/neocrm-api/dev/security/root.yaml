@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: An Environment Name to name the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName:
+    Description: The Service name
+    Type: String
+    Default: contactsvc
+
+Resources:
+
+  nestedSecurity:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName: !Ref ServiceName
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/neocrm-api/security/nested-security.yaml

@@ -15,4 +15,4 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/kms-key/kms.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/kms-key/kms.yaml
