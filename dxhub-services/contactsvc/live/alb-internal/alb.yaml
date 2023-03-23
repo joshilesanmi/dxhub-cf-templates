@@ -51,7 +51,7 @@ Parameters:
   AlbInternalSg:
     Description: Dxhub PublicSubnet1c
     Type: String
-    # Default: sg-088007583ceeaf250
+    # Default: sg-07c9788301fb28980
 
   Certificate:
     Description: The Certificate for the listeners

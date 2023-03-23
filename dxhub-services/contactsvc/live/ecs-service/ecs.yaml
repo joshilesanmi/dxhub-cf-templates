@@ -13,10 +13,10 @@ Parameters:
     Type: String
     # Default: contactsvc
 
-  ContainerName:
-    Description: The name of the Container
-    Type: String
-    # Default: webworker
+  # ContainerName:
+  #   Description: The name of the Container
+  #   Type: String
+  #   # Default: webworker
 
   DxhubCluster:
     Description: The name of Dxhub Cluster
@@ -201,11 +201,11 @@ Resources:
       # HealthCheckGracePeriodSeconds: Number
       LaunchType: FARGATE
       LoadBalancers:
-        - ContainerName: !Ref ContainerName
-          ContainerPort: 8081
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 8101
           TargetGroupArn: !ImportValue contactsvc-tg-1-arn # Change Expected
         - ContainerName: !Ref ServiceName
-          ContainerPort: 8081
+          ContainerPort: 8101
           TargetGroupArn: !ImportValue contactsvc-tg-2-arn # Change Expected
       NetworkConfiguration:
         AwsvpcConfiguration:

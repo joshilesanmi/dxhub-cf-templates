@@ -55,9 +55,9 @@ Parameters:
   #   Default: subnet-07260c658f4c2a3eb
   
   AlbInternalSg:
-    Description: Dxhub PublicSubnet1c
+    Description: Dxhub for AlbInternalSg
     Type: String
-    Default: sg-088007583ceeaf250
+    Default: sg-07c9788301fb28980
 
 Resources:
 
@@ -76,4 +76,4 @@ Resources:
         # PrivateSubnet1b: !Ref PrivateSubnet1b
         # PrivateSubnet1c: !Ref PrivateSubnet1c
         AlbInternalSg: !Ref AlbInternalSg
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/contactsvc/alb-internal/alb.yaml
+      TemplateURL: https://ip-saas-cf.s3.eu-central-1.amazonaws.com/dxhub/contactsvc/alb-internal/alb.yaml

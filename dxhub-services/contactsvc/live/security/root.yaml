@@ -44,4 +44,4 @@ Resources:
         # PublicALBSG: !Ref PublicALBSG
         InternalAlbSG: !Ref InternalAlbSG
         # CodeDeploySG: !Ref CodeDeploySG
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/contactsvc/security/security.yaml
+      TemplateURL: https://ip-saas-cf.s3.eu-central-1.amazonaws.com/dxhub/contactsvc/security/security.yaml

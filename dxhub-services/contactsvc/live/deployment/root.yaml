@@ -64,4 +64,4 @@ Resources:
         RepositoryName: !Ref RepositoryName
         BranchName: !Ref BranchName
         S3ArtifactBucket: !Ref S3ArtifactBucket
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/contactsvc/deployment/deployment.yaml
+      TemplateURL: https://ip-saas-cf.s3.eu-central-1.amazonaws.com/dxhub/contactsvc/deployment/deployment.yaml
