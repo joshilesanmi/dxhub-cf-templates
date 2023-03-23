@@ -13,6 +13,16 @@ Parameters:
     Type: String
     # Default: contactsvc
 
+  CodeDeployRoleArn:
+    Description: The arn for code deploy service role arn
+    Type: String
+    # Default: arn:aws:iam::115379056088:role/codedeploy-ecs
+
+  CodePipelineRoleArn:
+    Description: The arn for code pipeline service role arn
+    Type: String
+    # Default: arn:aws:iam::115379056088:role/service-role/AWSCodePipelineServiceRole
+
   DxhubCluster:
     Description: The name of Dxhub Cluster
     Type: String
@@ -31,7 +41,7 @@ Parameters:
   BranchName:
     Type: String
     Description: The GitHub Repo Name
-    # Default: neocrm-dev
+    # Default: main
 
   S3ArtifactBucket:
     Description: CodeBuild Service Role Arn
@@ -62,7 +72,7 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue contactsvc-codebuild-service-role-arn # Required
+      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn # Required
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -85,7 +95,7 @@ Resources:
       Description: !Sub "Build image for ${EnvironmentName}-${ServiceName}-notify"
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:5.0
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         ImagePullCredentialsType: CODEBUILD
         PrivilegedMode: true
         Type: LINUX_CONTAINER
@@ -94,7 +104,7 @@ Resources:
       #   Location: codepipeline-eu-central-1-0126153986/cache-deploy # Change needed
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue contactsvc-codebuild-service-role-arn
+      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -157,7 +167,7 @@ Resources:
             TargetGroups:
               - Name: !ImportValue contactsvc-tg-1-name
               - Name: !ImportValue contactsvc-tg-2-name
-      ServiceRoleArn: !ImportValue contactsvc-codedeploy-service-role-arn # Required
+      ServiceRoleArn: !Ref CodeDeployRoleArn # Required
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -174,7 +184,7 @@ Resources:
         Type: S3
       Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue contactsvc-codepipeline-service-role-arn # Required
+      RoleArn: !Ref CodePipelineRoleArn # Required
       Stages: # Required
         - Name: Source
           Actions:

@@ -53,20 +53,35 @@ Parameters:
   #   Type: String
   #   Default: subnet-07260c658f4c2a3eb
 
+  ECSTaskExecutionRole:
+    Description: The arn for ecs task execution role arn
+    Type: String
+    Default: arn:aws:iam::115379056088:role/dxhub-service-task-execution
+
   HoneyBagerkey:
     Description: HoneyBadger from Parameter Store for the container
     Type: String
     Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/HONEYBADGER_API_KEY
 
-  JRapi:
-    Description: JRapi from Parameter Store for the container
+  DBHost:
+    Description: DbHost from Parameter Store for the container
     Type: String
-    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/JR_API_URL
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_HOST
 
-  ECSTaskExecutionRole:
-      Description: JRapi from Parameter Store for the container
-      Type: String
-      Default: arn:aws:iam::115379056088:role/dxhub-service-task-execution
+  DBName:
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+
+  DBUsername:
+    Description: Db username from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+
+  DBPassword:
+    Description: Db password from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
 
 Resources:
 
@@ -81,8 +96,11 @@ Resources:
         PublicSubnet1a: !Ref PublicSubnet1a
         PublicSubnet1b: !Ref PublicSubnet1b
         PublicSubnet1c: !Ref PublicSubnet1c
-        HoneyBagerkey: !Ref HoneyBagerkey
-        JRapi: !Ref JRapi
         ECSTaskExecutionRole: !Ref ECSTaskExecutionRole
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/ecs-service/ecs.yaml
+        HoneyBagerkey: !Ref HoneyBagerkey
+        DBHost: !Ref DBHost
+        DBName: !Ref DBName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/contactsvc/ecs-service/ecs.yaml
 

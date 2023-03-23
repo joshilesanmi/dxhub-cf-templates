@@ -15,11 +15,12 @@ Parameters:
 
 Resources:
 
-  # # This is a role which is used by the ECS tasks themselves.
+  # This is a role which is used by the ECS tasks themselves.
+
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-task-role
+      RoleName: !Sub ${EnvironmentName}-${ServiceName}
       Path: /
       AssumeRolePolicyDocument:
         Statement:
@@ -56,19 +57,6 @@ Resources:
                   - kms:GenerateDataKey
                   - kms:DescribeKey
                 Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/dxhub-shared"
-        -
-          PolicyName: KMS-use-jr-configuration-key
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: UseSSMKey
-                Effect: "Allow"
-                Action:
-                  - kms:Decrypt
-                  - kms:Encrypt
-                  - kms:GenerateDataKey
-                  - kms:DescribeKey
-                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/jr-configuration-key"
         -
           PolicyName: ssm-channel-handling
           PolicyDocument:
@@ -235,111 +223,24 @@ Resources:
                   - s3:ListBucket
                 Resource: !Sub "arn:aws:s3:::${EnvironmentName}-${ServiceName}-doc"
 
-  CodeDeployServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: ''
-            Effect: Allow
-            Principal:
-              Service: [codedeploy.amazonaws.com]
-            Action: ['sts:AssumeRole']
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS'
-      RoleName: !Sub ${EnvironmentName}-${ServiceName}-ecs-codedeploy-role
-
-  CodePipelineServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: ''
-            Effect: Allow
-            Principal:
-              Service: [codepipeline.amazonaws.com]
-            Action: ['sts:AssumeRole']
-      RoleName: !Sub codepipeline-${EnvironmentName}-${ServiceName}-service-role
-      ManagedPolicyArns:
-        - !Sub "arn:aws:iam::${AWS::AccountId}:policy/AWSCodePipelineServiceRole"
-      Policies:
-        -
-          PolicyName: codepipeline-base-policy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: CWlogs
-                Effect: Allow
-                Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codepipeline/${EnvironmentName}-*"
-              - Sid: S3Artifacts
-                Effect: Allow
-                Action:
-                  - 's3:PutObject'
-                  - 's3:GetObject'
-                  - 's3:GetObjectVersion'
-                  - 's3:GetBucketAcl'
-                  - 's3:GetBucketLocation'
-                Resource: !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*"
-              - Sid: ECSTasks
-                Effect: Allow
-                Action:
-                  - 'ecs:DescribeServices'
-                  - 'ecs:DescribeTaskDefinition'
-                  - 'ecs:DescribeTasks'
-                  - 'ecs:ListTasks'
-                  - 'ecs:RegisterTaskDefinition'
-                  - 'ecs:UpdateService'
-                Resource: "*"
-              - Sid: CodeBuildReports
-                Effect: Allow
-                Action:
-                  - 'codebuild:CreateReportGroup'
-                  - 'codebuild:CreateReport'
-                  - 'codebuild:UpdateReport'
-                  - 'codebuild:BatchPutTestCases'
-                  - 'codebuild:BatchPutCodeCoverages'
-                  - 'codebuild:StartBuild'
-                  - 'codebuild:BatchGetBuilds'
-                Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${EnvironmentName}-*"
 
 Outputs:
 
 #####
-  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
-  # i.e !ImportValue contactsvc-ecs-task-role-arn
+# Modify the Export Name to a desired name and the suffix with the expected value type (i.e. Arn) to reflect your choice and use it in other templates
 #####
 
   ECSTaskRoleArn:
     Description: Export Value for the ECSTaskRole
     Value: !GetAtt ECSTaskRole.Arn
     Export:
-      Name: !Sub ${ServiceName}-ecs-task-role-arn
-      # arn:aws:iam::698195851833:role/dxhub-contactsvc-ecs-task-role
+      Name: !Sub ${EnvironmentName}-${ServiceName}-arn
+      # arn:aws:iam::698195851833:role/dxhub-contactsvc-arn
 
   CodeBuildServiceRoleArn:
     Description: Export Arn Value for the CodeBuild Service Role
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
-      Name: !Sub ${ServiceName}-codebuild-service-role-arn
-      # arn:aws:iam::698195851833:role/codebuild-contactsvc-service-role
-
-  CodeDeployServiceRoleArn:
-    Description: Export Arn Value for the CodeDeploy Service Role
-    Value: !GetAtt CodeDeployServiceRole.Arn
-    Export:
-      Name: !Sub ${ServiceName}-codedeploy-service-role-arn
-      # arn:aws:iam::698195851833:role/AWSServiceForCodeDeploy2ECS
-
-  CodePipelineServiceRoleArn:
-    Description: Export Arn Value for the CodePipeline Service Role
-    Value: !GetAtt CodePipelineServiceRole.Arn
-    Export:
-      Name: !Sub ${ServiceName}-codepipeline-service-role-arn
-      # arn:aws:iam::698195851833:role/codepipeline-contactsvc-service-role
-
+      Name: !Sub codebuild-${ServiceName}-service-role-arn
+      # arn:aws:iam::698195851833:role/codebuild-contactsvc-service-role-arn
+  

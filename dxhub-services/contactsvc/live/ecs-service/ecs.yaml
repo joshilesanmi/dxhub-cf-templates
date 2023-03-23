@@ -53,20 +53,35 @@ Parameters:
   #   Type: String
   #   # Default: subnet-07260c658f4c2a3eb
 
+  ECSTaskExecutionRole:
+    Description: The arn for ecs task execution role arn
+    Type: String
+    # Default: arn:aws:iam::115379056088:role/dxhub-service-task-execution
+
   HoneyBagerkey:
       Description: HoneyBagerkey from Parameter Store for the container
       Type: String
       # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
-  JRapi:
-      Description: JRapi from Parameter Store for the container
-      Type: String
-      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
+  DBHost:
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_HOST
 
-  ECSTaskExecutionRole:
-      Description: JRapi from Parameter Store for the container
-      Type: String
-      # Default: arn:aws:iam::115379056088:role/dxhub-service-task-execution
+  DBName:
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+
+  DBUsername:
+    Description: Db username from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+
+  DBPassword:
+    Description: Db password from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
     
 Resources:
 
@@ -91,9 +106,9 @@ Resources:
           Memory: 128
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
           PortMappings:
-            - ContainerPort: 8081
+            - ContainerPort: 8101
               Protocol: tcp
-              HostPort: 8081
+              HostPort: 8101
           Command:
             - "/contactsvc"
             - "webworker"
@@ -102,17 +117,26 @@ Resources:
           Secrets:
             - Name: HONEYBADGER_API_KEY
               ValueFrom: !Ref HoneyBagerkey
-            - Name: JR_API_URL
-              ValueFrom: !Ref JRapi
+            - Name: POSTGRES_DATABASE
+              ValueFrom: !Ref DBName
+            - Name: POSTGRES_HOST
+              ValueFrom: !Ref DBHost
+            - Name: POSTGRES_USERNAME
+              ValueFrom: !Ref DBUsername
+            - Name: POSTGRES_PASSWORD
+              ValueFrom: !Ref DBPassword
           Environment:
             - Name: AWS_XRAY_CONTEXT_MISSING
               Value: LOG_ERROR
             - Name: HONEYBADGER_ENV
               Value: production
+            - Name: POSTGRES_PORT
+              Value: "5432"
           HealthCheck:
             Command:
-              - "CMD-SHELL"
-              - "curl http://127.0.0.1:8081/bin/grpc_health_probe || exit 1"
+              - "/bin/grpc_health_probe"
+              - "-addr=:8101"
+              # /grpc.health.v1.Health/Check --> target group healthcheck
             Interval: 5
             Retries: 3
             StartPeriod: 0
@@ -148,7 +172,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !Ref ECSTaskExecutionRole # Change Expected
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -158,7 +182,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn # Change Expected
+      TaskRoleArn: !ImportValue dxhub-contactsvc-arn
 
   # 3. Service
 
@@ -206,9 +230,8 @@ Outputs:
   # i.e !ImportValue neocrm-ecs-service
 #####
 
-
   ECSServiceName:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: !Sub ${ServiceName}contactsvc-test-listener-arn
+      Name: !Sub ${ServiceName}-ecs-service

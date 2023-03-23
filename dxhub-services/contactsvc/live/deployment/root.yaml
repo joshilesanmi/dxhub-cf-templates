@@ -14,6 +14,16 @@ Parameters:
     Type: String
     Default: contactsvc
 
+  CodeDeployRoleArn:
+    Description: The arn for code deploy service role arn
+    Type: String
+    Default: arn:aws:iam::115379056088:role/codedeploy-ecs
+
+  CodePipelineRoleArn:
+    Description: The arn for code pipeline service role arn
+    Type: String
+    Default: arn:aws:iam::115379056088:role/service-role/AWSCodePipelineServiceRole
+
   DxhubCluster:
     Description: The name of Dxhub Cluster
     Type: String
@@ -47,9 +57,11 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
+        CodeDeployRoleArn: !Ref CodeDeployRoleArn
+        CodePipelineRoleArn: !Ref CodePipelineRoleArn
         DxhubCluster: !Ref DxhubCluster
         CodestarConnection: !Ref CodestarConnection
         RepositoryName: !Ref RepositoryName
         BranchName: !Ref BranchName
         S3ArtifactBucket: !Ref S3ArtifactBucket
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/deployment/deployment.yaml
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/contactsvc/deployment/deployment.yaml

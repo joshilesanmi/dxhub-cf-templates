@@ -22,4 +22,4 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/iam/iam.yaml
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/contactsvc/iam/iam.yaml

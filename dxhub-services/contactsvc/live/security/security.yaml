@@ -70,14 +70,14 @@ Resources:
 
   # Add this security group - ingress rule if your service is not publicly accessible - ( internally accessible in vpc )
 
-  ServiceIngressRule2:
+  ServiceIngressRule1:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from the InternalAlbSG
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
-      FromPort: 8081
-      ToPort: 8081
+      FromPort: 8101
+      ToPort: 8101
       SourceSecurityGroupId: !Ref InternalAlbSG
 
   # # Add this security group - ingress rule if your service will use the CodeDeploy LifeCycle Lambda Function
