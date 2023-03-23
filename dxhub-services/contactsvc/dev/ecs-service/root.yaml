@@ -21,22 +21,22 @@ Parameters:
   DBHost:
     Description: DbHost from Parameter Store for the container
     Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/POSTGRES_HOST
+    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
 
   DBName:
     Description: DbHost from Parameter Store for the container
     Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/POSTGRES_DATABASE
+    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
 
   DBUsername:
     Description: Db username from Parameter Store for the container
     Type: String
-    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/POSTGRES_USERNAME
+    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
 
-  # DBPassword:
-  #   Description: Db password from Parameter Store for the container
-  #   Type: String
-  #   Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+  DBPassword:
+    Description: Db password from Parameter Store for the container
+    Type: String
+    Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
 
 Resources:
 
@@ -50,5 +50,5 @@ Resources:
         DBHost: !Ref DBHost
         DBName: !Ref DBName
         DBUsername: !Ref DBUsername
-        # DBPassword: !Ref DBPassword
+        DBPassword: !Ref DBPassword
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/contactsvc/ecs-service/ecs.yaml

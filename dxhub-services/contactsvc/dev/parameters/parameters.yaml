@@ -20,7 +20,7 @@ Resources:
     Properties:
       DataType: text
       Description: PostgreSql Endpoint
-      Name: !Sub "/${EnvironmentName}/POSTGRESQL_HOST"
+      Name: !Sub "/${EnvironmentName}/${ServiceName}/POSTGRES_HOST"
       Tier: Standard
       Type: String
       Value: dxhub.cluster-cee8lvtdmj2y.eu-west-2.rds.amazonaws.com
@@ -30,7 +30,7 @@ Resources:
     Properties:
       DataType: text
       Description: PostgreSql db name
-      Name: !Sub "/${EnvironmentName}/POSTGRESQL_DATABASE"
+      Name: !Sub "/${EnvironmentName}/${ServiceName}/POSTGRES_DATABASE"
       Tier: Standard
       Type: String
       Value: !Ref EnvironmentName
@@ -39,8 +39,8 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       DataType: text
-      Description: PostgreSql db name
-      Name: !Sub "/${EnvironmentName}/POSTGRESQL_USERNAME"
+      Description: PostgreSql UserName db name
+      Name: !Sub "/${EnvironmentName}/${ServiceName}/POSTGRES_USERNAME"
       Tier: Standard
       Type: String
       Value: !Ref ServiceName

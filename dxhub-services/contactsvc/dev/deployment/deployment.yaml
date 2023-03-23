@@ -55,7 +55,7 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue contactsvc-codebuild-service-role-arn # Required
+      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn # Required
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -89,7 +89,7 @@ Resources:
         Location: codepipeline-eu-west-2-0126153986/cache-deploy
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue contactsvc-codebuild-service-role-arn
+      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -139,8 +139,8 @@ Resources:
         DeploymentOption: WITH_TRAFFIC_CONTROL
         DeploymentType: BLUE_GREEN
       ECSServices:
-        - ClusterName: !ImportValue ECSCluster
-          ServiceName: !ImportValue contactsvc-ecs-name
+        - ClusterName: !ImportValue dxhub-cluster
+          ServiceName: !ImportValue contactsvc-ecs-service
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
@@ -150,9 +150,9 @@ Resources:
               ListenerArns:
                 - !ImportValue contactsvc-test-listener-arn
             TargetGroups:
-              - Name: !ImportValue contactsvc-target-group-1-name
-              - Name: !ImportValue contactsvc-target-group-2-name
-      ServiceRoleArn: !ImportValue contactsvc-codedeploy-service-role-arn # Required
+              - Name: !ImportValue contactsvc-tg-1-name
+              - Name: !ImportValue contactsvc-tg-2-name
+      ServiceRoleArn: !ImportValue dxhub-codedeploy-service-role-arn # Required
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -169,7 +169,7 @@ Resources:
         Type: S3
       Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue contactsvc-codepipeline-service-role-arn # Required
+      RoleArn: !ImportValue dxhub-codepipeline-service-role-arn # Required
       Stages: # Required
         - Name: Source
           Actions:

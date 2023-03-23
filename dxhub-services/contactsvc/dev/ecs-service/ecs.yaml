@@ -33,10 +33,10 @@ Parameters:
     Type: String
     # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
 
-  # DBPassword:
-  #   Description: Db password from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+  DBPassword:
+    Description: Db password from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
 
 Resources:
 
@@ -57,7 +57,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Name: webworker
+        - Name: !Ref ServiceName
           Memory: 128
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
           PortMappings:
@@ -78,8 +78,8 @@ Resources:
               ValueFrom: !Ref DBHost
             - Name: POSTGRES_USERNAME
               ValueFrom: !Ref DBUsername
-            # - Name: POSTGRES_PASSWORD
-            #   ValueFrom: !Ref DBPassword
+            - Name: POSTGRES_PASSWORD
+              ValueFrom: !Ref DBPassword
           Environment:
             - Name: AWS_XRAY_CONTEXT_MISSING
               Value: LOG_ERROR
