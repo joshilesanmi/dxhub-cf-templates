@@ -21,6 +21,6 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
-      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/ecs-service/contactsvc/parameters/nested-parameters.yaml
+      TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/contactsvc/parameters/parameters.yaml
 
 # Outputs:

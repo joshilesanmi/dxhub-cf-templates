@@ -18,20 +18,20 @@ Parameters:
     Type: String
     # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
-  # DBHost:
-  #   Description: Db Host from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
+  DBHost:
+    Description: Db Host from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
 
-  # DBName:
-  #   Description: Db Name from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+  DBName:
+    Description: Db Name from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
 
-  # DBUsername:
-  #   Description: Db username from Parameter Store for the container
-  #   Type: String
-  #   # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+  DBUsername:
+    Description: Db username from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
 
   # DBPassword:
   #   Description: Db password from Parameter Store for the container
@@ -57,7 +57,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Name: !Ref ServiceName
+        - Name: webworker
           Memory: 128
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
           PortMappings:
@@ -72,12 +72,12 @@ Resources:
           Secrets:
             - Name: HONEYBADGER_API_KEY
               ValueFrom: !Ref HoneyBagerkey
-            # - Name: POSTGRES_DATABASE
-            #   ValueFrom: !Ref DBName
-            # - Name: POSTGRES_HOST
-            #   ValueFrom: !Ref DBHost
-            # - Name: POSTGRES_USERNAME
-            #   ValueFrom: !Ref DBUsername
+            - Name: POSTGRES_DATABASE
+              ValueFrom: !Ref DBName
+            - Name: POSTGRES_HOST
+              ValueFrom: !Ref DBHost
+            - Name: POSTGRES_USERNAME
+              ValueFrom: !Ref DBUsername
             # - Name: POSTGRES_PASSWORD
             #   ValueFrom: !Ref DBPassword
           Environment:
@@ -127,7 +127,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn
+      ExecutionRoleArn: !ImportValue dxhub-task-execution-role-arn
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -137,14 +137,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn
+      TaskRoleArn: !ImportValue dxhub-contactsvc-arn
 
   # 3. Service
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !ImportValue ECSCluster
+      Cluster: !ImportValue dxhub-cluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -158,15 +158,15 @@ Resources:
       LoadBalancers:
         - ContainerName: !Ref ServiceName
           ContainerPort: 8101
-          TargetGroupArn: !ImportValue contactsvc-target-group-1-arn
+          TargetGroupArn: !ImportValue contactsvc-tg-1-arn
         - ContainerName: !Ref ServiceName
           ContainerPort: 8101
-          TargetGroupArn: !ImportValue contactsvc-target-group-2-arn
+          TargetGroupArn: !ImportValue contactsvc-tg-2-arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !ImportValue conactsvc-security-group
+            - !ImportValue contactsvc-sg
           Subnets:
             - !ImportValue PublicSubnet1a
             - !ImportValue PublicSubnet1b
@@ -187,4 +187,4 @@ Outputs:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: contactsvc-ecs-name
+      Name: !Sub ${ServiceName}-ecs-service

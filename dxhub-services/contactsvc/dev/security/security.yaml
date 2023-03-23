@@ -60,17 +60,17 @@ Resources:
       ToPort: 8101
       SourceSecurityGroupId: !ImportValue InternalAlbSG
 
-  # Add this security group - ingress rule if your service will use the CodeDeploy LifeCycle Lambda Function
+  # # Add this security group - ingress rule if your service will use the CodeDeploy LifeCycle Lambda Function
 
-  ServiceIngressRule2:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from the CodeDeployLifeCyleSG
-      GroupId: !Ref ServiceSecurityGroup
-      IpProtocol: tcp
-      FromPort: 8101
-      ToPort: 8101
-      SourceSecurityGroupId: !ImportValue CodeDeployLifeCyleSG
+  # ServiceIngressRule2:
+  #   Type: AWS::EC2::SecurityGroupIngress
+  #   Properties:
+  #     Description: Ingress from the CodeDeployLifeCyleSG
+  #     GroupId: !Ref ServiceSecurityGroup
+  #     IpProtocol: tcp
+  #     FromPort: 8101
+  #     ToPort: 8101
+  #     SourceSecurityGroupId: !ImportValue CodeDeployLifeCyleSG
 
 Outputs:
 
@@ -82,4 +82,4 @@ Outputs:
     Description: A security group for Service
     Value: !Ref ServiceSecurityGroup
     Export:
-      Name: conactsvc-security-group
+      Name: !Sub ${ServiceName}-sg # contactsvc-sg

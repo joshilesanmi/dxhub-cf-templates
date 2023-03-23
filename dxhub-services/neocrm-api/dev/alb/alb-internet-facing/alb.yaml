@@ -190,7 +190,7 @@ Outputs:
     Description: The url of the external load balancer
     Value: !Join ['', ['http://', !GetAtt 'ServiceALB.DNSName']]
     Export:
-      Name: !Sub ${ServiceName}-alb-url # contactsvc-alb-url
+      Name: !Sub ${ServiceName}-alb-url # neocrm-api-alb-url
 
   ServiceTargetGroup1Name:
     Description: The export name for ServiceTargetGroup1
