@@ -8,6 +8,16 @@ Parameters:
     Type: String
     # Default: dxhub
 
+  GithubTiggerFunctionName:
+    Description: The name lambda function for github tigger
+    Type: String
+    # Default: github-trigger-codepipeline
+
+  CodedeployFunctionName:
+    Description: The name of first service code deploy lifecycle
+    Type: String
+    # Default: codedeploy-lifecycle
+
 Resources:
 
   # 1. ECS Clusters
@@ -21,6 +31,18 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}
+
+  # 2. Lambda ECR Repositories
+
+  GithubTiggerECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${GithubTiggerFunctionName}
+
+  CodeDeployECRRepository2:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-${CodedeployFunctionName}
 
   # 2. Cloud Watch Logs
 

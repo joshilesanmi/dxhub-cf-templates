@@ -13,11 +13,6 @@ Parameters:
     Type: String
     Default: contactsvc
 
-  # ContainerName:
-  #   Description: The name of the Container
-  #   Type: String
-  #   Default: webworker
-
   DxhubCluster:
     Description: The name of Dxhub Cluster
     Type: String
@@ -92,7 +87,6 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
         DxhubCluster: !Ref DxhubCluster
-        # ContainerName: !Ref ContainerName
         PublicSubnet1a: !Ref PublicSubnet1a
         PublicSubnet1b: !Ref PublicSubnet1b
         PublicSubnet1c: !Ref PublicSubnet1c

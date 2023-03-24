@@ -20,7 +20,7 @@ Parameters:
   GithubSecret:
     Description: The github secret
     Type: String
-    Default: 3mU!uE@*Z2Ky!R_TTYkNYm.ksAB3CZoz-@2CqJ_TsrpofXjzmqCTZ2RU2hqzPXft
+    Default: xxxxxx
 
   LambdaAccountID:
     Description: The lambda account id
@@ -35,7 +35,7 @@ Parameters:
   IAMClientSecret:
     Description: The IAM client secret
     Type: String
-    Default: zsYLTMbPDaNuPBZQKV85wXx+QlaEqeiJrfz1mIwst7c3T5K7XBwNK9cR+BsbaNiV
+    Default: xxxxxx
 
   InstanceID:
     Description: The Instance ID

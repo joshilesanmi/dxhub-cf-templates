@@ -12,7 +12,17 @@ Parameters:
   ServiceName:
     Description: The name of first service
     Type: String
-    Default: neocrm-api
+    Default: contactsvc
+
+  CodeDeployRoleArn:
+    Description: The arn for code deploy service role arn
+    Type: String
+    Default: arn:aws:iam::115379056088:role/codedeploy-ecs
+
+  CodePipelineRoleArn:
+    Description: The arn for code pipeline service role arn
+    Type: String
+    Default: arn:aws:iam::115379056088:role/service-role/AWSCodePipelineServiceRole
 
   DxhubCluster:
     Description: The name of Dxhub Cluster
@@ -32,13 +42,12 @@ Parameters:
   BranchName:
     Type: String
     Description: The GitHub Repo Name
-    Default: neocrm-dev
+    Default: main
 
   S3ArtifactBucket:
     Description: CodeBuild Service Role Arn
     Type: String
     Default: codepipeline-eu-central-1-675644474011
-
 
 Resources:
 
@@ -48,9 +57,11 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         ServiceName: !Ref ServiceName
+        CodeDeployRoleArn: !Ref CodeDeployRoleArn
+        CodePipelineRoleArn: !Ref CodePipelineRoleArn
         DxhubCluster: !Ref DxhubCluster
         CodestarConnection: !Ref CodestarConnection
         RepositoryName: !Ref RepositoryName
         BranchName: !Ref BranchName
         S3ArtifactBucket: !Ref S3ArtifactBucket
-      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/deployment/deployment.yaml
+      TemplateURL: https://ip-saas-cf.s3.eu-central-1.amazonaws.com/dxhub/contactsvc/deployment/deployment.yaml

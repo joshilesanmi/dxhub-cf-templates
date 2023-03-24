@@ -12,12 +12,12 @@ Parameters:
   ServiceName:
     Description: The Environment Name to name the resources
     Type: String
-    Default: neocrm-api
+    Default: contactsvc
 
   Certificate:
     Description: The Certificate for the listeners
     Type: String
-    Default: arn:aws:acm:eu-central-1:115379056088:certificate/b7cc923c-7daa-4b4d-a69f-f550f386d872
+    Default: arn:aws:acm:eu-central-1:115379056088:certificate/4ba4d9cf-70eb-419f-84ec-6e3cc8a3defe
 
   VpcId:
     Description: Dxhub VpcId

@@ -11,7 +11,17 @@ Parameters:
   ServiceName:
     Description: The name of first service
     Type: String
-    # Default: neocrm-api
+    # Default: contactsvc
+
+  CodeDeployRoleArn:
+    Description: The arn for code deploy service role arn
+    Type: String
+    # Default: arn:aws:iam::115379056088:role/codedeploy-ecs
+
+  CodePipelineRoleArn:
+    Description: The arn for code pipeline service role arn
+    Type: String
+    # Default: arn:aws:iam::115379056088:role/service-role/AWSCodePipelineServiceRole
 
   DxhubCluster:
     Description: The name of Dxhub Cluster
@@ -31,7 +41,7 @@ Parameters:
   BranchName:
     Type: String
     Description: The GitHub Repo Name
-    # Default: neocrm-dev
+    # Default: main
 
   S3ArtifactBucket:
     Description: CodeBuild Service Role Arn
@@ -41,13 +51,13 @@ Parameters:
 Resources:
 
 #####
-  # Modify the LogicalID (i.e. NeoCrmApiCodeBuild ) to a desired name and add the suffix with the expected value type (i.e. CodeBuild,CodeDeployApplication) 
+  # Modify the LogicalID (i.e. ContactServiceCodeBuild ) to a desired name and add the suffix with the expected value type (i.e. CodeBuild,CodeDeployApplication)
   #
 #####
 
   # 1. CodeBuild Projects
 
-  NeoCrmApiCodeBuild:
+  ContactServiceCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -62,7 +72,7 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildServiceRoleArn # Required
+      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn # Required
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -73,9 +83,9 @@ Resources:
       #     Value: deployment
       TimeoutInMinutes: 60
 
-  # Use this notify Build if you need it otherwise comment it out 
-  
-  NeoCrmApiNotifyCodeBuild:
+  # Use this notify Build if you need it otherwise comment it out
+
+  ContactServiceNotifyCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -85,16 +95,16 @@ Resources:
       Description: !Sub "Build image for ${EnvironmentName}-${ServiceName}-notify"
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:5.0
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         ImagePullCredentialsType: CODEBUILD
         PrivilegedMode: true
         Type: LINUX_CONTAINER
-      Cache:
-        Type: S3
-        Location: codepipeline-eu-west-2-0126153986/cache-deploy
+      # Cache:
+      #   Type: S3
+      #   Location: codepipeline-eu-central-1-0126153986/cache-deploy # Change needed
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue CodeBuildServiceRoleArn
+      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -108,7 +118,7 @@ Resources:
 
   # 2. CodeDeploy Applications
 
-  NeoCrmApiCodeDeployApplication:
+  ContactServiceCodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
       ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
@@ -121,10 +131,10 @@ Resources:
 
   # 3. CodeDeploy DeploymentGroups
 
-  NeoCrmApiCodeDeployGroup:
+  ContactServiceCodeDeployGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
-      ApplicationName: !Ref NeoCrmApiCodeDeployApplication  # Required
+      ApplicationName: !Ref ContactServiceCodeDeployApplication  # Required
       AutoRollbackConfiguration:
         Enabled: true
         Events:
@@ -145,19 +155,19 @@ Resources:
         DeploymentType: BLUE_GREEN
       ECSServices:
         - ClusterName: !Ref DxhubCluster
-          ServiceName: !ImportValue ECSServiceName
+          ServiceName: !ImportValue contactsvc-ecs-service # change expected - the output from the ecs template
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceProdListenerArn
+                - !ImportValue contactsvc-prod-listener-arn # change expected - the output from the alb template
             TestTrafficRoute:
               ListenerArns:
-                - !ImportValue ServiceTestListenerArn
+                - !ImportValue contactsvc-test-listener-arn # change expected - the output from the alb template
             TargetGroups:
-              - Name: !ImportValue ServiceTargetGroup1Name
-              - Name: !ImportValue ServiceTargetGroup2Name
-      ServiceRoleArn: !ImportValue CodeDeployServiceRoleArn # Required
+              - Name: !ImportValue contactsvc-tg-1-name # change expected - the output from the alb template
+              - Name: !ImportValue contactsvc-tg-2-name # change expected - the output from the alb template
+      ServiceRoleArn: !Ref CodeDeployRoleArn # Required
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -166,7 +176,7 @@ Resources:
 
   # 4. CodePipeline
 
-  NeoCrmApiCodePipeline:
+  ContactServiceCodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -174,7 +184,7 @@ Resources:
         Type: S3
       Name: !Sub "${EnvironmentName}-${ServiceName}"
       RestartExecutionOnUpdate: false
-      RoleArn: !ImportValue CodePipelineServiceRoleArn # Required
+      RoleArn: !Ref CodePipelineRoleArn # Required
       Stages: # Required
         - Name: Source
           Actions:
@@ -203,7 +213,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref NeoCrmApiCodeBuild
+                ProjectName: !Ref ContactServiceCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
@@ -219,8 +229,8 @@ Resources:
                 Version: "1"
                 Provider: CodeDeployToECS
               Configuration:
-                ApplicationName: !Ref NeoCrmApiCodeDeployApplication
-                DeploymentGroupName: !Ref NeoCrmApiCodeDeployGroup
+                ApplicationName: !Ref ContactServiceCodeDeployApplication
+                DeploymentGroupName: !Ref ContactServiceCodeDeployGroup
                 TaskDefinitionTemplateArtifact: BuildArtifacts
                 AppSpecTemplateArtifact: BuildArtifacts
                 AppSpecTemplatePath: appspec.yaml
@@ -242,7 +252,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref NeoCrmApiNotifyCodeBuild
+                ProjectName: !Ref ContactServiceNotifyCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               # OutputArtifacts:

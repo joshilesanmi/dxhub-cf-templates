@@ -20,7 +20,7 @@ Parameters:
   GithubSecret:
     Description: The github secret
     Type: String
-    # Default: 3mU!uE@*Z2Ky!R_TTYkNYm.ksAB3CZoz-@2CqJ_TsrpofXjzmqCTZ2RU2hqzPXft
+    # Default: xxxxxxxx
 
   LambdaAccountID:
     Description: The lambda account id
@@ -35,7 +35,7 @@ Parameters:
   IAMClientSecret:
     Description: The IAM client secret
     Type: String
-    # Default: zsYLTMbPDaNuPBZQKV85wXx+QlaEqeiJrfz1mIwst7c3T5K7XBwNK9cR+BsbaNiV
+    # Default: xxxxxxxxxx
 
   InstanceID:
     Description: The Instance ID
@@ -59,19 +59,7 @@ Parameters:
     
 Resources:
 
-# 1. ECR Repositories
-
-  GithubTiggerECRRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub ${EnvironmentName}-${GithubTiggerFunctionName}
-
-  CodeDeployECRRepository2:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub ${EnvironmentName}-${CodedeployFunctionName}
-
-# 2. Lambda Functions
+# 1. Lambda Functions
 
   GithubTigger:
     Type: AWS::Lambda::Function
@@ -79,8 +67,8 @@ Resources:
       FunctionName: !Sub ${EnvironmentName}-${GithubTiggerFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerFunctionName}:b07cd347"
-      Role: !ImportValue GithubTriggerCodePipelineArn
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${GithubTiggerFunctionName}:0613b7ab"
+      Role: !ImportValue dxhub-github-trigger-arn
       Timeout: 30
       MemorySize: 256
       Environment:
@@ -93,8 +81,8 @@ Resources:
       FunctionName: !Sub ${EnvironmentName}-${CodedeployFunctionName}
       PackageType: Image
       Code:
-        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}:b07cd347"
-      Role: !ImportValue CodeDeployLifeCycleRoleArn
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${CodedeployFunctionName}:0613b7ab"
+      Role: !ImportValue dxhub-codedeploy-lifecycle-role-arn
       Timeout: 30
       MemorySize: 256
       Environment:

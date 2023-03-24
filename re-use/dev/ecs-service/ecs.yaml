@@ -11,27 +11,37 @@ Parameters:
   ServiceName:
     Description: The name of first service
     Type: String
-    # Default: neocrm-api
-
-  DynamodbInstance:
-      Description: DbHost from Parameter Store for the container
-      Type: String
-      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
+    # Default: contactsvc
 
   HoneyBagerkey:
-      Description: DbHost from Parameter Store for the container
-      Type: String
-      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
-  JRapi:
-      Description: DbHost from Parameter Store for the container
-      Type: String
-      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL
+  DBHost:
+    Description: Db Host from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
+
+  DBName:
+    Description: Db Name from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+
+  DBUsername:
+    Description: Db username from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+
+  DBPassword:
+    Description: Db password from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
 
 Resources:
 
 #####
-  # Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb, 
+# Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb,
 #####
 
   # 1. ECR Repositories
@@ -51,30 +61,37 @@ Resources:
           Memory: 128
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvironmentName}-${ServiceName}"
           PortMappings:
-            - ContainerPort: 8081
+            - ContainerPort: 8101
               Protocol: tcp
-              HostPort: 8081
+              HostPort: 8101
           Command:
-            - "/neocrm-api"
+            - "/contactsvc"
             - "webworker"
-            - "--http-addr"
+            - "--grpc-addr"
             - ":8081"
           Secrets:
-            - Name: DATABASE_AWS_DYNAMODB_INSTANCE_TABLE
-              ValueFrom: !Ref DynamodbInstance
             - Name: HONEYBADGER_API_KEY
               ValueFrom: !Ref HoneyBagerkey
-            - Name: JR_API_URL
-              ValueFrom: !Ref JRapi
+            - Name: POSTGRES_DATABASE
+              ValueFrom: !Ref DBName
+            - Name: POSTGRES_HOST
+              ValueFrom: !Ref DBHost
+            - Name: POSTGRES_USERNAME
+              ValueFrom: !Ref DBUsername
+            - Name: POSTGRES_PASSWORD
+              ValueFrom: !Ref DBPassword
           Environment:
             - Name: AWS_XRAY_CONTEXT_MISSING
               Value: LOG_ERROR
             - Name: HONEYBADGER_ENV
               Value: production
-          HealthCheck:
+            - Name: POSTGRES_PORT
+              Value: "5432"
+          HealthCheck: # Healthchecks need changes depending on the protocol
             Command:
-              -  "CMD-SHELL"
-              - "curl http://127.0.0.1:8081/health_check || exit 1"
+              - "/bin/grpc_health_probe"
+              - "-addr=:8101"
+              # /grpc.health.v1.Health/Check --> target group healthcheck
             Interval: 5
             Retries: 3
             StartPeriod: 0
@@ -110,7 +127,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue ECSTaskExecutionRoleArn # Change Expected
+      ExecutionRoleArn: !ImportValue dxhub-task-execution-role-arn
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -120,14 +137,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue ECSTaskRoleArn # Change Expected
+      TaskRoleArn: !ImportValue dxhub-contactsvc-arn # change expected - the output from the iam template
 
-  # 4. Service
+  # 3. Service
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !ImportValue ECSCluster
+      Cluster: !ImportValue dxhub-cluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -140,37 +157,37 @@ Resources:
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: !Ref ServiceName
-          ContainerPort: 8081
-          TargetGroupArn: !ImportValue ServiceTargetGroup1Arn # Change Expected
+          ContainerPort: 8101
+          TargetGroupArn: !ImportValue contactsvc-tg-1-arn # change expected - the output from the alb template
         - ContainerName: !Ref ServiceName
-          ContainerPort: 8081
-          TargetGroupArn: !ImportValue ServiceTargetGroup2Arn # Change Expected
+          ContainerPort: 8101
+          TargetGroupArn: !ImportValue contactsvc-tg-2-arn # change expected - the output from the alb template
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !ImportValue ServiceSecurityGroup # Change Expected
-          Subnets: # Change Expected if Service is in another subnet
-            - !ImportValue PublicSubnet1a
+            - !ImportValue contactsvc-sg # change expected - the output from the security template
+          Subnets:                      
+            - !ImportValue PublicSubnet1a   
             - !ImportValue PublicSubnet1b
             - !ImportValue PublicSubnet1c
+            # - !ImportValue PrivateSubnet1a   # change this section if your service resides in the private subnets
+            # - !ImportValue PrivateSubnet1b
+            # - !ImportValue PrivateSubnet1c
       # PlatformVersion: "String"
       PropagateTags: TASK_DEFINITION
       SchedulingStrategy: REPLICA
       ServiceName: !Sub ${ServiceName}
       TaskDefinition: !Ref ServiceTaskDefinition
 
-
 Outputs:
 
 #####
-  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
-  # i.e !ImportValue neocrm-ecs-service
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
 #####
 
   ECSServiceName:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: !Sub ${ServiceName}-ecs-service
-
+      Name: !Sub ${ServiceName}-ecs-service # sample output - contactsvc-ecs-service

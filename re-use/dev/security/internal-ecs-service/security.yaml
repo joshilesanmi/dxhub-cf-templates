@@ -14,26 +14,6 @@ Parameters:
     Type: String
     # Default: contactsvc
 
-  VpcId:
-    Description: Dxhub VpcId
-    Type: String
-    # Default: vpc-090e086f59b874011
-
-  # PublicALBSG:
-  #   Description: dxhub public alb sg
-  #   Type: String
-  #   # Default: sg-003c7e67c72bf48e4
-
-  InternalAlbSG:
-    Description: dxhub internal alb sg
-    Type: String
-    # Default: sg-07c9788301fb28980
-
-  # CodeDeploySG:
-  #   Description: dxhub code-deploy alb sg
-  #   Type: String
-  #   # Default: sg-0b749210a35085de6
-
 Resources:
 
   # A security group for the containers we will run in Fargate.
@@ -43,7 +23,7 @@ Resources:
     Properties:
       GroupName: !Sub ${EnvironmentName}-${ServiceName}-sg
       GroupDescription: !Sub Access to the ${ServiceName} containers
-      VpcId: !Ref VpcId
+      VpcId: !ImportValue VpcId
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-sg
@@ -56,20 +36,6 @@ Resources:
       IpProtocol: -1
       SourceSecurityGroupId: !Ref ServiceSecurityGroup
 
-  # # Add this security group - ingress rule if your service is publicly accessible - ( externally accessible )
-
-  # ServiceIngressRule1:
-  #   Type: AWS::EC2::SecurityGroupIngress
-  #   Properties:
-  #     Description: Ingress from the PublicLoadBalancerSG
-  #     GroupId: !Ref ServiceSecurityGroup
-  #     IpProtocol: tcp
-  #     FromPort: 8081
-  #     ToPort: 8081
-  #     SourceSecurityGroupId: !Ref PublicALBSG
-
-  # Add this security group - ingress rule if your service is not publicly accessible - ( internally accessible in vpc )
-
   ServiceIngressRule1:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -78,13 +44,12 @@ Resources:
       IpProtocol: tcp
       FromPort: 8101
       ToPort: 8101
-      SourceSecurityGroupId: !Ref InternalAlbSG
+      SourceSecurityGroupId: !ImportValue InternalAlbSG
 
 Outputs:
 
 #####
-  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
-  # i.e !ImportValue contactsvc-sg
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
 #####
 
   ServiceSecurityGroup:
@@ -92,4 +57,3 @@ Outputs:
     Value: !Ref ServiceSecurityGroup
     Export:
       Name: !Sub ${ServiceName}-sg # sample output - contactsvc-sg
-

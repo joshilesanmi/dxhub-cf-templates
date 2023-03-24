@@ -8,6 +8,16 @@ Parameters:
     Type: String
     Default: dxhub
 
+  GithubTiggerFunctionName:
+    Description: The name lambda function for github tigger
+    Type: String
+    Default: github-trigger-codepipeline
+
+  CodedeployFunctionName:
+    Description: The name of first service code deploy lifecycle
+    Type: String
+    Default: codedeploy-lifecycle
+
 Resources:
 
   nestedECS:
@@ -15,4 +25,6 @@ Resources:
     Properties:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
+        GithubTiggerFunctionName: !Ref GithubTiggerFunctionName
+        CodedeployFunctionName: !Ref CodedeployFunctionName
       TemplateURL: https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/dxhub-infra/ecs-service/ecs.yaml

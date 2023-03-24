@@ -296,4 +296,4 @@ Outputs:
     Value: !GetAtt CodeDeployLifeCycleRole.Arn
     Export:
       Name: !Sub ${EnvironmentName}-codedeploy-lifecycle-role-arn
-      # arn:aws:iam::xxxx:role/dxhub-codedeploy-lifecycle-role
+      # arn:aws:iam::xxxx:role/dxhub-codedeploy-lifecycle-role-arn

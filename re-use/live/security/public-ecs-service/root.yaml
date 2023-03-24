@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  EnvironmentName:
+    Description: An Environment Name to name the resources
+    Type: String
+    Default: dxhub
+
+  ServiceName:
+    Description: The Service name
+    Type: String
+    Default: contactsvc
+
+  VpcId:
+    Description: Dxhub VpcId
+    Type: String
+    Default: vpc-090e086f59b874011
+
+  PublicALBSG:
+    Description: dxhub public alb sg
+    Type: String
+    Default: sg-003c7e67c72bf48e4
+
+Resources:
+  
+  nestedSecurity:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        ServiceName: !Ref ServiceName
+        VpcId: !Ref VpcId
+        PublicALBSG: !Ref PublicALBSG
+      TemplateURL: https://dxhub-cf-templates.s3.eu-central-1.amazonaws.com/network/security.yaml

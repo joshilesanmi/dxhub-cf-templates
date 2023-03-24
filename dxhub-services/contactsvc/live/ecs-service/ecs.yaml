@@ -132,7 +132,7 @@ Resources:
               Value: production
             - Name: POSTGRES_PORT
               Value: "5432"
-          HealthCheck:
+          HealthCheck: # Healthchecks need changes depending on the protocol
             Command:
               - "/bin/grpc_health_probe"
               - "-addr=:8101"
