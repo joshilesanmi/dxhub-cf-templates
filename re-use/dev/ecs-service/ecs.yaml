@@ -40,10 +40,6 @@ Parameters:
 
 Resources:
 
-#####
-# Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb,
-#####
-
   # 1. ECR Repositories
 
   ECRRepository:
@@ -127,7 +123,9 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !ImportValue dxhub-task-execution-role-arn
+      ExecutionRoleArn: 
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-task-execution-role-arn"
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -137,14 +135,18 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
-      TaskRoleArn: !ImportValue dxhub-contactsvc-arn # change expected - the output from the iam template
+      TaskRoleArn: 
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-${ServiceName}-arn"
 
   # 3. Service
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !ImportValue dxhub-cluster
+      Cluster: 
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-cluster"
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -158,15 +160,20 @@ Resources:
       LoadBalancers:
         - ContainerName: !Ref ServiceName
           ContainerPort: 8101
-          TargetGroupArn: !ImportValue contactsvc-tg-1-arn # change expected - the output from the alb template
+          TargetGroupArn: 
+            Fn::ImportValue:
+              !Sub "${ServiceName}-tg-1-arn"
         - ContainerName: !Ref ServiceName
           ContainerPort: 8101
-          TargetGroupArn: !ImportValue contactsvc-tg-2-arn # change expected - the output from the alb template
+          TargetGroupArn: 
+            Fn::ImportValue:
+              !Sub "${ServiceName}-tg-2-arn"
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !ImportValue contactsvc-sg # change expected - the output from the security template
+            - Fn::ImportValue:
+                !Sub "${ServiceName}-sg"
           Subnets:                      
             - !ImportValue PublicSubnet1a   
             - !ImportValue PublicSubnet1b
@@ -181,10 +188,6 @@ Resources:
       TaskDefinition: !Ref ServiceTaskDefinition
 
 Outputs:
-
-#####
-# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
-#####
 
   ECSServiceName:
     Description: Export for the ECSService

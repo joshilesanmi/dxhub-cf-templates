@@ -13,72 +13,36 @@ Parameters:
     Type: String
     # Default: contactsvc
 
-  DxhubCluster:
-    Description: The name of Dxhub Cluster
-    Type: String
-    # Default: dxhub
-
-  PublicSubnet1a:
-    Description: Dxhub PublicSubnet1a
-    Type: String
-    # Default: subnet-04ef6dbeac6590347
-
-  PublicSubnet1b:
-    Description: Dxhub PublicSubnet1b
-    Type: String
-    # Default: subnet-0d6515159c1192fc0
-
-  PublicSubnet1c:
-    Description: Dxhub PublicSubnet1c
-    Type: String
-    # Default: subnet-098a6dc7ffbd55c5e
-
-  # PrivateSubnet1a:
-  #   Description: Dxhub PrivateSubnet1a
-  #   Type: String
-  #   # Default: subnet-0250df016f025d304
-
-  # PrivateSubnet1b:
-  #   Description: Dxhub PrivateSubnet1b
-  #   Type: String
-  #   # Default: subnet-09f41e2ac8f83f639
-
-  # PrivateSubnet1c:
-  #   Description: Dxhub PrivateSubnet1b
-  #   Type: String
-  #   # Default: subnet-07260c658f4c2a3eb
-
-  ECSTaskExecutionRole:
-    Description: The arn for ecs task execution role arn
-    Type: String
-    # Default: arn:aws:iam::115379056088:role/dxhub-service-task-execution
-
   HoneyBagerkey:
-      Description: HoneyBagerkey from Parameter Store for the container
-      Type: String
-      # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
+    Description: DbHost from Parameter Store for the container
+    Type: String
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY
 
   DBHost:
-    Description: DbHost from Parameter Store for the container
+    Description: Db Host from Parameter Store for the container
     Type: String
-    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_HOST
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_HOST
 
   DBName:
-    Description: DbHost from Parameter Store for the container
+    Description: Db Name from Parameter Store for the container
     Type: String
-    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_DATABASE
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_DATABASE
 
   DBUsername:
     Description: Db username from Parameter Store for the container
     Type: String
-    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_USERNAME
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_USERNAME
 
   DBPassword:
     Description: Db password from Parameter Store for the container
     Type: String
-    # Default: arn:aws:ssm:eu-central-1:115379056088:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
-    
+    # Default: arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/contactsvc/POSTGRES_PASSWORD
+
 Resources:
+
+#####
+# Important - Modify the !ImportValue If you modified the export values in the other templates - security, alb,
+#####
 
   # 1. ECR Repositories
 
@@ -163,7 +127,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub ${ServiceName}-xray
       Cpu: .5vCPU
-      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      ExecutionRoleArn: !ImportValue dxhub-task-execution-role-arn
       Family: !Sub ${EnvironmentName}-${ServiceName}
       Memory: 1GB
       NetworkMode: awsvpc
@@ -173,6 +137,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-${ServiceName}-TaskDefinition
+      # TaskRoleArn: !ImportValue dxhub-contactsvc-arn # change expected - the output from the iam template
       TaskRoleArn: 
         Fn::ImportValue:
           !Sub "${EnvironmentName}-${ServiceName}-arn"
@@ -182,7 +147,7 @@ Resources:
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: !Ref DxhubCluster
+      Cluster: !ImportValue dxhub-cluster
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -210,10 +175,10 @@ Resources:
           SecurityGroups:
             - Fn::ImportValue:
                 !Sub "${ServiceName}-sg"
-          Subnets: # Change Expected if Service is in another subnet
-            - !Ref PublicSubnet1a
-            - !Ref PublicSubnet1b
-            - !Ref PublicSubnet1c
+          Subnets:                      
+            - !ImportValue PublicSubnet1a   
+            - !ImportValue PublicSubnet1b
+            - !ImportValue PublicSubnet1c
             # - !ImportValue PrivateSubnet1a   # change this section if your service resides in the private subnets
             # - !ImportValue PrivateSubnet1b
             # - !ImportValue PrivateSubnet1c
@@ -223,11 +188,10 @@ Resources:
       ServiceName: !Sub ${ServiceName}
       TaskDefinition: !Ref ServiceTaskDefinition
 
-
 Outputs:
 
   ECSServiceName:
     Description: Export for the ECSService
     Value: !GetAtt ECSService.Name
     Export:
-      Name: !Sub ${ServiceName}-ecs-service
+      Name: !Sub ${ServiceName}-ecs-service # sample output - contactsvc-ecs-service

@@ -42,15 +42,11 @@ Resources:
       Description: Ingress from the PublicLoadBalancerSG
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
-      FromPort: 8081
-      ToPort: 8081
+      FromPort: 8081 # Needs changing
+      ToPort: 8081 # Needs changing
       SourceSecurityGroupId: !ImportValue PublicALBSG
 
 Outputs:
-
-#####
-# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
-#####
 
   ServiceSecurityGroup:
     Description: A security group for Service

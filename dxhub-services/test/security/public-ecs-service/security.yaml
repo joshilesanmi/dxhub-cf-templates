@@ -39,14 +39,18 @@ Resources:
   ServiceIngressRule1:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from the InternalAlbSG
+      Description: Ingress from the PublicLoadBalancerSG
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
-      FromPort: 8101 # Needs changing
-      ToPort: 8101  # Needs changing
-      SourceSecurityGroupId: !ImportValue InternalAlbSG
+      FromPort: 8081
+      ToPort: 8081
+      SourceSecurityGroupId: !ImportValue PublicALBSG
 
 Outputs:
+
+#####
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
 
   ServiceSecurityGroup:
     Description: A security group for Service

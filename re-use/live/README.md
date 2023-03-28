@@ -3,10 +3,11 @@
     Important note:
         
         - This deployment is a step by step deployment, for easier debugging.
-        - Infrastructutre Resources (VpcId, Public and Private Subnets, Security Groups) to be re-used are Referenced by Id or Name from AWS.
         - Resources created in the stacks to be deployed have exports which will be imported in the required resources i.e. !ImportValue ECSService.
-        - The root files to each service has a url pointing to the s3 bucket containing the templates ensure that the url is correct in every deployment
-
+        - The root files to each service has a url pointing to the s3 bucket containing the templates ensure that the url is correct in every deployment.
+        - The templates relies heavily on string concatenation with two main parameters i.e. EnvironmentName and ServiceName. 
+            * EnvironmentName - refers to dxhub
+            * ServiceName - referes to the name of the service being aded i.e. neocrm-api, contactsvc
 
 # 1. IAM 
 
@@ -14,95 +15,91 @@
 
     # Modifications
 
-        # Export section
+        # Root file
 
-            The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
+            TemplateURL: 
 
-                !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
+                This section reference the cloudformation template i.e. https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/iam/iam.yaml
 
-            # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
-
-
-            Then deploy the stack
+    Then deploy the stack
 
 
 # 2. Security
 
-    # Security stack
+    # Security stack 
+
+        In here you find two folders - internal-ecs-service and public-ecs-service
+
+        If your service is publicly accessible use public-ecs-service and if your service is not accessible to the public use internal-ecs-service
 
         # Modifications
 
-            # For service that are internet facing (accessible publicly)
+            # Root file
 
-                Check the comments in the file to know what ingress rule to use - to reflect the correct ingress rule to use. Also modify the logical ID number to reflect the number of rules i.e. (ServiceIngeressRule1). Modify the port section to reflect your app port.
+                TemplateURL: 
 
-            # For service that are not internet facing (not accessible publicly)
+                    This section reference the cloudformation template i.e. https://dxhub-infra-templates.s3.eu-central-1.amazonaws.com/security/security.yaml
 
-                Check the comments in the file to know what ingress rule to use - to reflect the correct ingress rule to use. Also modify the logical ID number to reflect the number of rules i.e. (ServiceIngeressRule1). Modify the port section to reflect your app port.
+            # Security.yaml
 
-            # Export section
-
-                The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
-
-                    !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
-
-                # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
-
+                Change the port to suit your app port
 
     Then deploy the stack
 
 # 3. ALB
 
-    # Internal Stack
+    In here you find two folders - alb-internal and alb-internet-facing
 
-        Use this stack if your app is not publicy accessible.
+    If your service is publicly accessible use alb-internet-facing and if your service is not accessible to the public use alb-internal
 
-        # Modifications
+        # Alb internal Stack
 
-            # Target Group
+            # Modifications
 
-                Port to reflect the app port.
-                Health check path - Match this to reflect your health check path in your app.
+                # Target Group
 
-            # ALB
+                    Apps have different kind of health checks and Protocol Version - A need to understand what kind of healthcheck you need to implement is key
 
-                Modify the Subnet section if your app resides in the Private Subnets or in the Public Subnets.
+                    # Changes
+                    
+                        * Port to reflect the app port.
 
-            # Export section
+                        * Protocol Version
+                    
+                        * Health check path - Match this to reflect your health check path in your app.
 
-                The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
+                # ALB
 
-                    !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
-
-                # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+                    Modify the Subnet section if your app resides in the Private Subnets or in the Public Subnets to use the required Subnet
 
         Then deploy the stack
 
-    # Internet-Facing Stack
+        # Alb Internet-Facing Stack
 
-        Use this stack if your app is publicy accessible.
+            In here you find two folders - alb-internal and alb-internet-facing
 
-        # Modifications
+            If your service is publicly accessible use alb-internet-facing and if your service is not accessible to the public use alb-internal
 
-            # Target Group
+            # Modifications
 
-                Port to reflect the app port.
-                Health check path - Match this to reflect your health check path in your app.
+                # Target Group
 
-            # ALB
+                    Apps have different kind of health checks and Protocol Version - A need to understand what kind of healthcheck you need to implement is key
 
-                Modify the Subnet section if your app resides in the Private Subnets or in the Public Subnets.
+                    # Changes
+                    
+                        * Port to reflect the app port.
 
+                        * Protocol Version
+                    
+                        * Health check path - Match this to reflect your health check path in your app.
 
-            # Export section
+                # ALB
 
-                The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
-
-                    !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
-
-                # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
+                    Modify the Subnet section if your app resides in the Private Subnets or in the Public Subnets to use the required Subnet
 
      Then deploy the stack
+
 
 # 4. Parameters
 
@@ -121,60 +118,40 @@
 
      Then deploy the stack
 
-# 4. ECS
+# 5. ECS
 
     # Resources to be imported here that were created in the previous stacks:
 
         - Iam Roles
         - Security Group
-        - Subnets - Modify Subnets to the desired location of your service. ( The Dxhub infra allows you to choose between PublicSubnet 1-3 or PrivateSubnet 1-3)
-        - Target groups 
+        - Subnets
+        - Target groups
 
-    # The resources to be imported above are already created from the previous deployments and some are part of the dxhub infr i.e. subnets
+    # The resources to be imported above are already created from the previous deployments and some are part of the dxhub infra i.e. subnets
 
     # Method of import is of this formart !ImportValue PublicSubnet
 
     # Modifcations
 
-    # TaskDefinition
+        # TaskDefinition
 
-        # Modifications in this section need to reflect the task-def.json on the codebase.
+            # Modifications in this section need to reflect the task-def.json on the codebase i.e. Secrets and Environment Variables
 
-        # You will need to create Parameters in the parameters section for the Environment Variables and the Secrets Variables too.
+            # The Secrets and Environment Variables are Parameters and using them you need to modify the parameter section in the template and the root file template
 
-        # ImportValues here are values from iam -
+        # ECS Service
 
-            - ecs-task-execution-role-arn i.e. !ImportValue ECSTaskExecutionRoleArn
-            - task-role-arn i.e. !ImportValue ECSTaskRoleArn
+            # Modifications in this section include - 
 
-    # CloudWatchLogs
+                - Subnets - Modify Subnets to the desired location of your service. ( The Dxhub infra allows you to choose between PublicSubnet 1-3 or PrivateSubnet 1-3)
 
-        # This section we have a static value in the LogGroupName because the service being created belongs to the dxhub cluster
-
-    # ECS Service
-
-         # Modifications in this section include !ImportValues on the following -
-
-            - Cluster
-            - TargetGroup1Arn
-            - TargetGroup1Arn
-            - SecurityGroup
-            - Subnets
-
-    # Export section
-
-        The export section creates a concatenation on the export name that you can import using !ImportValue function then with the exact format of the concatenated string i.e.
-
-            !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
-
-        # Important note to have is that this value is used in the ECS stacks in such a way i.e. !ImportValue contactsvc-ecs-task-role-arn
 
      Then deploy the stack
 
 
-# 5. Deployment
+# 6. Deployment
 
-    # Resources to be imported here that were created in the previous stacks:
+     # Resources to be imported here that were created in the previous stacks:
 
         - Parameters Section
         - Iam Roles - Codebuild, CodePipeline,
@@ -193,27 +170,10 @@
 
         # CodeBuild Project
 
-            # Confirm your ServiceRole ImportValue
+            # Source Section - BuildSpec - This section refers to the buildspec-image.yml location in codebase
 
             # Confirm if you need the notify CodeBuildProject if not comment it out and also in codepipeline
 
-        # CodeDeploy DeploymentGroup
-
-            # Modifications
-
-                # ImportValues
-
-                    - IAM - CodeDeploy Service Role
-                    - ECS ClusterName
-                    - ECS ServiceName
-                    - ListernerArns - Prod and Test
-                    - TargetGroup - 1 and 2
-                    - IAM - CodeDeploy
-
         # CodePipeline
 
-            # Modifications
-
-                # ImportValues
-
-                    - IAM - CodePipeline Role
+            # S3 bucket - reference a new output artifact bucket if need be

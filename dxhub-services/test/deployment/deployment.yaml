@@ -34,9 +34,13 @@ Parameters:
 
 Resources:
 
+#####
+# Modify the LogicalID (i.e. ContactSVCCodeBuild ) to a desired name and add the suffix with the expected value type (i.e. CodeBuild,CodeDeployApplication)
+#####
+
   # 1. CodeBuild Projects
 
-  ServiceCodeBuild:
+  ContactSVCCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -68,7 +72,7 @@ Resources:
     # Use this notify Build if you need it otherwise comment it out
   #######
 
-  ServiceNotifyCodeBuild:
+  ContactSVCNotifyCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -87,7 +91,7 @@ Resources:
         Location: codepipeline-eu-west-2-0126153986/cache-deploy
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole:
+      ServiceRole: 
         Fn::ImportValue:
           !Sub "codebuild-${ServiceName}-service-role-arn"
       Source:
@@ -103,10 +107,10 @@ Resources:
 
   # 2. CodeDeploy Applications
 
-  ServiceCodeDeployApplication:
+  ContactSVCCodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
+      ApplicationName: !Sub "AppECS-${EnvironmentName}"
       ComputePlatform: ECS
       # Tags:
       #   - Key: user:project
@@ -116,10 +120,10 @@ Resources:
 
   # 3. CodeDeploy DeploymentGroups
 
-  ServiceCodeDeployGroup:
+  ContactSVCCodeDeployGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
-      ApplicationName: !Ref ServiceCodeDeployApplication # Required
+      ApplicationName: !Ref ContactSVCCodeDeployApplication  # Required
       AutoRollbackConfiguration:
         Enabled: true
         Events:
@@ -162,7 +166,9 @@ Resources:
               - Name: 
                   Fn::ImportValue:
                     !Sub "${ServiceName}-tg-2-name"
-      ServiceRoleArn: !ImportValue dxhub-codedeploy-service-role-arn 
+      ServiceRoleArn: 
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-codedeploy-service-role-arn"
       # Tags:
       #   - Key: user:project
       #     Value: !Sub ${ServiceName1}
@@ -171,7 +177,7 @@ Resources:
 
   # 4. CodePipeline
 
-  ServiceCodePipeline:
+  ContactSVCCodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -210,7 +216,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref ServiceCodeBuild
+                ProjectName: !Ref ContactSVCCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
@@ -226,8 +232,8 @@ Resources:
                 Version: "1"
                 Provider: CodeDeployToECS
               Configuration:
-                ApplicationName: !Ref ServiceCodeDeployApplication
-                DeploymentGroupName: !Ref ServiceCodeDeployGroup
+                ApplicationName: !Ref ContactSVCCodeDeployApplication
+                DeploymentGroupName: !Ref ContactSVCCodeDeployGroup
                 TaskDefinitionTemplateArtifact: BuildArtifacts
                 AppSpecTemplateArtifact: BuildArtifacts
                 AppSpecTemplatePath: appspec.yaml
@@ -249,7 +255,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref ServiceNotifyCodeBuild
+                ProjectName: !Ref ContactSVCNotifyCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               # OutputArtifacts:

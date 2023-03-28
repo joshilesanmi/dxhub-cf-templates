@@ -50,14 +50,9 @@ Parameters:
 
 Resources:
 
-#####
-  # Modify the LogicalID (i.e. ContactServiceCodeBuild ) to a desired name and add the suffix with the expected value type (i.e. CodeBuild,CodeDeployApplication)
-  #
-#####
-
   # 1. CodeBuild Projects
 
-  ContactServiceCodeBuild:
+  ServiceCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -72,7 +67,9 @@ Resources:
         Type: LINUX_CONTAINER
       Name: !Sub "${EnvironmentName}-${ServiceName}-develop-image"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn # Required
+      ServiceRole: 
+        Fn::ImportValue:
+          !Sub "codebuild-${ServiceName}-service-role-arn"
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-image.yml"
         Type: CODEPIPELINE
@@ -85,7 +82,7 @@ Resources:
 
   # Use this notify Build if you need it otherwise comment it out
 
-  ContactServiceNotifyCodeBuild:
+  ServiceNotifyCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -104,7 +101,9 @@ Resources:
       #   Location: codepipeline-eu-central-1-0126153986/cache-deploy # Change needed
       Name: !Sub "${EnvironmentName}-${ServiceName}-notify"
       QueuedTimeoutInMinutes: 480
-      ServiceRole: !ImportValue codebuild-contactsvc-service-role-arn
+      ServiceRole: 
+        Fn::ImportValue:
+          !Sub "codebuild-${ServiceName}-service-role-arn"
       Source:
         BuildSpec: !Sub "${ServiceName}/codepipeline/buildspec-notify.yml"
         Type: CODEPIPELINE
@@ -118,7 +117,7 @@ Resources:
 
   # 2. CodeDeploy Applications
 
-  ContactServiceCodeDeployApplication:
+  ServiceCodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
       ApplicationName: !Sub "AppECS-${EnvironmentName}-${ServiceName}"
@@ -131,10 +130,10 @@ Resources:
 
   # 3. CodeDeploy DeploymentGroups
 
-  ContactServiceCodeDeployGroup:
+  ServiceCodeDeployGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
-      ApplicationName: !Ref ContactServiceCodeDeployApplication  # Required
+      ApplicationName: !Ref ServiceCodeDeployApplication  # Required
       AutoRollbackConfiguration:
         Enabled: true
         Events:
@@ -155,18 +154,26 @@ Resources:
         DeploymentType: BLUE_GREEN
       ECSServices:
         - ClusterName: !Ref DxhubCluster
-          ServiceName: !ImportValue contactsvc-ecs-service # change expected - the output from the ecs template
+          ServiceName: 
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-cluster"
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:
               ListenerArns:
-                - !ImportValue contactsvc-prod-listener-arn # change expected - the output from the alb template
+                - Fn::ImportValue:
+                    !Sub "${ServiceName}-prod-listener-arn"
             TestTrafficRoute:
               ListenerArns:
-                - !ImportValue contactsvc-test-listener-arn # change expected - the output from the alb template
+                - Fn::ImportValue:
+                    !Sub "${ServiceName}-test-listener-arn"
             TargetGroups:
-              - Name: !ImportValue contactsvc-tg-1-name # change expected - the output from the alb template
-              - Name: !ImportValue contactsvc-tg-2-name # change expected - the output from the alb template
+              - Name: 
+                  Fn::ImportValue:
+                    !Sub "${ServiceName}-tg-1-name"
+              - Name: 
+                  Fn::ImportValue:
+                    !Sub "${ServiceName}-tg-2-name"
       ServiceRoleArn: !Ref CodeDeployRoleArn # Required
       # Tags:
       #   - Key: user:project
@@ -176,7 +183,7 @@ Resources:
 
   # 4. CodePipeline
 
-  ContactServiceCodePipeline:
+  ServiceCodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -213,7 +220,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref ContactServiceCodeBuild
+                ProjectName: !Ref ServiceCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
@@ -229,8 +236,8 @@ Resources:
                 Version: "1"
                 Provider: CodeDeployToECS
               Configuration:
-                ApplicationName: !Ref ContactServiceCodeDeployApplication
-                DeploymentGroupName: !Ref ContactServiceCodeDeployGroup
+                ApplicationName: !Ref ServiceCodeDeployApplication
+                DeploymentGroupName: !Ref ServiceCodeDeployGroup
                 TaskDefinitionTemplateArtifact: BuildArtifacts
                 AppSpecTemplateArtifact: BuildArtifacts
                 AppSpecTemplatePath: appspec.yaml
@@ -252,7 +259,7 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref ContactServiceNotifyCodeBuild
+                ProjectName: !Ref ServiceNotifyCodeBuild
               InputArtifacts:
                 - Name: SourceArtifact
               # OutputArtifacts:

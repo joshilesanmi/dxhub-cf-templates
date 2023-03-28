@@ -42,11 +42,15 @@ Resources:
       Description: Ingress from the InternalAlbSG
       GroupId: !Ref ServiceSecurityGroup
       IpProtocol: tcp
-      FromPort: 8101 # Needs changing
-      ToPort: 8101  # Needs changing
+      FromPort: 1111
+      ToPort: 1111
       SourceSecurityGroupId: !ImportValue InternalAlbSG
 
 Outputs:
+
+#####
+# Modify the Export Name to a desired name and add the suffix with the expected value type (i.e. Url/Arn/Name) to reflect your choice
+#####
 
   ServiceSecurityGroup:
     Description: A security group for Service

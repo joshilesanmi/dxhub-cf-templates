@@ -1,0 +1,246 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A template for the internal ALB for ECS Services
+
+Parameters:
+
+  EnvironmentName:
+    Description: The Environment Name to name the resources
+    Type: String
+    # Default: dxhub
+
+  ServiceName:
+    Description: The Service Name
+    Type: String
+    # Default: contactsvc
+
+  Certificate:
+    Description: The Certificate for the listeners
+    Type: String
+    # Default: arn:aws:acm:eu-west-2:012615398682:certificate/6204290f-17da-411e-b6b6-80ab93aa88e6
+
+  Path:
+    Type: String
+    Default: "*"
+    Description: A path on the public load balancer that this service
+                 should be connected to. Use * to send all load balancer
+                 traffic to this service.
+
+Resources:
+
+  # 1. Target Groups
+
+####
+  # This target groups are used for GRPC based healthchecks.
+####
+
+  ServiceTargetGroup1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 21
+      HealthCheckPath: /grpc.health.v1.Health/Check
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 4
+      Name: !Sub ${EnvironmentName}-${ServiceName}-1
+      Port: 8101
+      Protocol: HTTP
+      ProtocolVersion: GRPC
+      Tags:
+       - Key: user:environment
+         Value: development
+       - Key: user:product
+         Value: !Sub ${EnvironmentName}-${ServiceName}-1
+      TargetType: ip
+      UnhealthyThresholdCount: 4
+      VpcId: !ImportValue VpcId
+
+  ServiceTargetGroup2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 21
+      HealthCheckPath: /grpc.health.v1.Health/Check
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 20
+      HealthyThresholdCount: 4
+      Name: !Sub ${EnvironmentName}-${ServiceName}-2
+      Port: 8101
+      Protocol: HTTP
+      ProtocolVersion: GRPC
+      Tags:
+        - Key: user:environment
+          Value: development
+        - Key: user:product
+          Value: !Sub ${EnvironmentName}-${ServiceName}-2
+      TargetType: ip
+      UnhealthyThresholdCount: 4
+      VpcId: !ImportValue VpcId
+
+####
+  # This target groups are used for HTTP based healthchecks.
+####
+
+  #   ServiceTargetGroup1:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     HealthCheckIntervalSeconds: 21
+  #     HealthCheckPath: /health_check
+  #     HealthCheckProtocol: HTTP
+  #     HealthCheckTimeoutSeconds: 20
+  #     HealthyThresholdCount: 4
+  #     Name: !Sub ${EnvironmentName}-${ServiceName}-1
+  #     Port: 8081
+  #     Protocol: HTTP
+  #     Tags:
+  #      - Key: user:environment
+  #        Value: development
+  #      - Key: user:product
+  #        Value: !Sub ${EnvironmentName}-${ServiceName}-1
+  #     TargetType: ip
+  #     UnhealthyThresholdCount: 4
+  #     VpcId: !ImportValue VpcId
+
+  # ServiceTargetGroup2:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     HealthCheckIntervalSeconds: 21
+  #     HealthCheckPath: /health_check
+  #     HealthCheckProtocol: HTTP
+  #     HealthCheckTimeoutSeconds: 20
+  #     HealthyThresholdCount: 4
+  #     Name: !Sub ${EnvironmentName}-${ServiceName}-2
+  #     Port: 8081
+  #     Protocol: HTTP
+  #     Tags:
+  #       - Key: user:environment
+  #         Value: development
+  #       - Key: user:product
+  #         Value: !Sub ${EnvironmentName}-${ServiceName}-2
+  #     TargetType: ip
+  #     UnhealthyThresholdCount: 4
+  #     VpcId: !ImportValue VpcId
+
+  # 1. Load Balancers
+
+  # The load balancer name 'dxhub-{ServiceName}' can only contain characters that are alphanumeric characters and hyphens(-)
+
+  # Change the subnets section to reflect the desired subnets to use
+
+  ServiceALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}-${ServiceName}
+      Scheme: internal
+      SecurityGroups: [!ImportValue InternalAlbSG] # Change Expected - here two changes are expectes sg for internal alb or sg for public alb 
+      Subnets:
+        - !ImportValue PublicSubnet1a
+        - !ImportValue PublicSubnet1b
+        - !ImportValue PublicSubnet1c
+      Tags:
+        - Key: user:environment
+          Value: development
+        - Key: user:product
+          Value: !Sub ${EnvironmentName}-${ServiceName}-alb
+
+  # listeners
+
+  ServiceProdListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref Certificate
+      DefaultActions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup1
+          Type: forward
+      LoadBalancerArn: !Ref ServiceALB # Required
+      Port: 443
+      Protocol: HTTPS
+
+  ServiceTestListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref Certificate
+      DefaultActions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup2
+          Type: forward
+      LoadBalancerArn: !Ref ServiceALB # Required
+      Port: 8443
+      Protocol: HTTPS
+
+  # 5. Load Balancer Listener Rule
+
+  ServiceProdListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup1
+          Type: forward
+      Conditions: # Required
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref ServiceProdListener # Required
+      Priority: 1 # Required
+
+  ServiceTestListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions: # Required
+        - TargetGroupArn: !Ref ServiceTargetGroup2
+          Type: forward
+      Conditions: # Required
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref ServiceTestListener # Required
+      Priority: 1 # Required
+
+Outputs:
+
+#####
+  # The export section creates a concatenation on the export name using ServiceName that you can import using !ImportValue function then with the exact format of the concatenated string
+  # i.e !ImportValue contactsvc-target-group-1-arn or !ImportValue contactsvc-prod-listener-arn
+#####
+
+  ServiceLoadBalanceUrl:
+    Description: The url of the external load balancer
+    Value: !Join ['', ['http://', !GetAtt 'ServiceALB.DNSName']]
+    Export:
+      Name: !Sub ${ServiceName}-alb-url # sample output - contactsvc-alb-url
+
+  ServiceTargetGroup1Name:
+    Description: The export name for ServiceTargetGroup1
+    Value: !GetAtt ServiceTargetGroup1.TargetGroupName
+    Export:
+      Name: !Sub ${ServiceName}-tg-1-name # sample output - contactsvc-tg-1-name
+
+  ServiceTargetGroup1Arn:
+    Description: The export arn for ServiceTargetGroup1
+    Value: !Ref ServiceTargetGroup1
+    Export:
+      Name: !Sub ${ServiceName}-tg-1-arn # sample output - contactsvc-tg-1-arn
+
+  ServiceTargetGroup2Name:
+    Description: The export name for ServiceTargetGroup2
+    Value: !GetAtt ServiceTargetGroup2.TargetGroupName
+    Export:
+      Name: !Sub ${ServiceName}-tg-2-name # sample output - contactsvc-tg-2-name
+
+  ServiceTargetGroup2Arn:
+    Description: The export arn for ServiceTargetGroup2
+    Value: !Ref ServiceTargetGroup2
+    Export:
+      Name: !Sub ${ServiceName}-tg-2-arn # sample output - contactsvc-tg-2-arn
+
+  ServiceProdListenerArn:
+    Description: The export arn for GraphqlProdListener
+    Value: !Ref ServiceProdListener
+    Export:
+      Name: !Sub ${ServiceName}-prod-listener-arn # sample output - contactsvc-prod-listener-arn
+
+  ServiceTestListenerArn:
+    Description: The export arn for GraphqlProdListener 
+    Value: !Ref ServiceTestListener
+    Export:
+      Name: !Sub ${ServiceName}-test-listener-arn # sample output - ontactsvc-test-listener-arn
+
