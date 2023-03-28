@@ -1,2 +1,3 @@
 # dxhub-cf-templates
-cloud formation templates for dxhub projects 
+
+    Cloudformation templates for dxhub infrastructure and services
